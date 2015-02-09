@@ -1,2 +1,6 @@
-*.class
-.DS_Store
+/*
+/*/
+!/*.java
+!/*.tex
+!/*.txt
+!/Makefile
