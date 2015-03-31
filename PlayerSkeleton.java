@@ -6,19 +6,19 @@ class Moves extends State {
 }
 
 class Weights {
-	public static double numHoles;
+	public static double holes;
 	public static double maxHeight;
 	public static double rowsCleared;
-	public static double[] colHeights = new double[State.COLS];
-	public static double[] adjColHeightDiffs = new double[State.COLS - 1];
+	public static double[] topHeights = new double[State.COLS];
+	public static double[] topHeightDiffs = new double[State.COLS - 1];
 
 	public static void setWeights() {
-		for (int i = 0; i < colHeights.length; i++)
-			colHeights[i] = .5;
-		for (int i = 0; i < adjColHeightDiffs.length; i++)
-			adjColHeightDiffs[i] = 1.5;
+		for (int i = 0; i < topHeights.length; i++)
+			topHeights[i] = .5;
+		for (int i = 0; i < topHeightDiffs.length; i++)
+			topHeightDiffs[i] = 1.5;
 		maxHeight = 1.5;
-		numHoles = 5;
+		holes = 5;
 		rowsCleared = -2;
 	}
 }
@@ -59,7 +59,7 @@ class Simulator
 		double sum = heuristic;
 
 		for(int i = 0; i < top.length - 1; i++)
-			sum += Math.abs(top[i] - top[i+1]) * Weights.adjColHeightDiffs[i];
+			sum += Math.abs(top[i] - top[i+1]) * Weights.topHeightDiffs[i];
 
 		return sum;
 	}
@@ -99,11 +99,11 @@ class Simulator
 			// For each field in piece-column - bottom to top
 			for (int row = colBottom; row < colTop; row++) {
 				field[row][col + slot] = turn;
-				heuristic += Weights.colHeights[col + slot];
+				heuristic += Weights.topHeights[col + slot];
 			}
 			// Adjust holes heuristic by looking for new holes under the col
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
-				heuristic += Weights.numHoles;
+				heuristic += Weights.holes;
 		}
 	}
 
@@ -136,12 +136,12 @@ class Simulator
 
 			// Lower the top
 			top[col]--;
-			heuristic -= Weights.colHeights[col];
+			heuristic -= Weights.topHeights[col];
 
 			// If a hole opened up, andjust top and heuristic
 			while (top[col] > 0 && field[top[col] - 1][col] == 0) {
-				heuristic -= Weights.colHeights[col];
-				heuristic -= Weights.numHoles;
+				heuristic -= Weights.topHeights[col];
+				heuristic -= Weights.holes;
 				top[col]--;
 			}
 
@@ -161,10 +161,23 @@ class Simulator
 public class PlayerSkeleton {
 
 	private Simulator gameSim = new Simulator();
+	private	State s = new State();
 
 	public PlayerSkeleton() {
 		Weights.setWeights();
 	}
+
+  public double playAndReturnScore() {
+		while(!s.hasLost()) {
+			s.makeMove(pickMove(s,s.legalMoves()));
+			try {
+				Thread.sleep(0);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+    return s.getRowsCleared();
+  }
 
 	private double forwardLookAvg(Simulator s, int maxdepth) {
 		double average = 0;
@@ -218,23 +231,5 @@ public class PlayerSkeleton {
 
 		gameSim.simMove(bestMove, s.getNextPiece());
 		return bestMove;
-	}
-
-	public static void main(String[] args) {
-		State s = new State();
-		TFrame tFrame = new TFrame(s);
-		PlayerSkeleton p = new PlayerSkeleton();
-		while(!s.hasLost()) {
-			s.makeMove(p.pickMove(s,s.legalMoves()));
-			s.draw();
-			tFrame.setScoreLabel(s.getRowsCleared());
-			s.drawNext(0,0);
-			try {
-				Thread.sleep(0);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
 	}
 }
