@@ -7,3 +7,6 @@ compile:	PlayerSkeleton.java
 
 run:	PlayerSkeleton.class
 	java PlayerSkeleton
+
+clean:
+	rm *.class
