@@ -6,19 +6,19 @@ class Moves extends State {
 }
 
 class Weights {
-	public static double holes;
+	public static double numHoles;
 	public static double maxHeight;
 	public static double rowsCleared;
-	public static double[] topHeights = new double[State.COLS];
-	public static double[] topHeightDiffs = new double[State.COLS - 1];
+	public static double[] colHeights = new double[State.COLS];
+	public static double[] adjColHeightDiffs = new double[State.COLS - 1];
 
 	public static void setWeights() {
-		for (int i = 0; i < topHeights.length; i++)
-			topHeights[i] = .5;
-		for (int i = 0; i < topHeightDiffs.length; i++)
-			topHeightDiffs[i] = 1.5;
+		for (int i = 0; i < colHeights.length; i++)
+			colHeights[i] = .5;
+		for (int i = 0; i < adjColHeightDiffs.length; i++)
+			adjColHeightDiffs[i] = 1.5;
 		maxHeight = 1.5;
-		holes = 5;
+		numHoles = 5;
 		rowsCleared = -2;
 	}
 }
@@ -59,7 +59,7 @@ class Simulator
 		double sum = heuristic;
 
 		for(int i = 0; i < top.length - 1; i++)
-			sum += Math.abs(top[i] - top[i+1]) * Weights.topHeightDiffs[i];
+			sum += Math.abs(top[i] - top[i+1]) * Weights.adjColHeightDiffs[i];
 
 		return sum;
 	}
@@ -99,11 +99,11 @@ class Simulator
 			// For each field in piece-column - bottom to top
 			for (int row = colBottom; row < colTop; row++) {
 				field[row][col + slot] = turn;
-				heuristic += Weights.topHeights[col + slot];
+				heuristic += Weights.colHeights[col + slot];
 			}
 			// Adjust holes heuristic by looking for new holes under the col
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
-				heuristic += Weights.holes;
+				heuristic += Weights.numHoles;
 		}
 	}
 
@@ -136,12 +136,12 @@ class Simulator
 
 			// Lower the top
 			top[col]--;
-			heuristic -= Weights.topHeights[col];
+			heuristic -= Weights.colHeights[col];
 
 			// If a hole opened up, andjust top and heuristic
 			while (top[col] > 0 && field[top[col] - 1][col] == 0) {
-				heuristic -= Weights.topHeights[col];
-				heuristic -= Weights.holes;
+				heuristic -= Weights.colHeights[col];
+				heuristic -= Weights.numHoles;
 				top[col]--;
 			}
 
