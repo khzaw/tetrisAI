@@ -5,26 +5,21 @@ class Moves extends State {
 	}
 }
 
-class W {
-	public static double[] weights;
-	public static final int HOLES = 0;
-	public static final int TOP_START = HOLES + 1;
-	public static final int TOP_STOP = TOP_START + State.COLS - 1;
-	public static final int MAX_HEIGHT = TOP_STOP + 1;
-	public static final int TOPDIFF_START = MAX_HEIGHT + 1;
- 	public static final int TOPDIFF_STOP = TOPDIFF_START + State.COLS - 2;
-	public static final int CLEARED = TOPDIFF_STOP + 1;
+class Weights {
+	public static double holes;
+	public static double maxHeight;
+	public static double rowsCleared;
+	public static double[] topHeights = new double[State.COLS];
+	public static double[] topHeightDiffs = new double[State.COLS - 1];
 
 	public static void setWeights() {
-		weights = new double[CLEARED + 1];
-
-		for (int i = TOP_START; i <= TOP_STOP; i++)
-			weights[i] = .5;
-		for (int i = TOPDIFF_START; i <= TOPDIFF_STOP; i++)
-			weights[i] = 1.5;
-		weights[MAX_HEIGHT] = 1.5;
-		weights[HOLES] = 5;
-		weights[CLEARED] = -2;
+		for (int i = 0; i < topHeights.length; i++)
+			topHeights[i] = .5;
+		for (int i = 0; i < topHeightDiffs.length; i++)
+			topHeightDiffs[i] = 1.5;
+		maxHeight = 1.5;
+		holes = 5;
+		rowsCleared = -2;
 	}
 }
 
@@ -64,7 +59,7 @@ class Simulator
 		double sum = heuristic;
 
 		for(int i = 0; i < top.length - 1; i++)
-			sum += Math.abs(top[i] - top[i+1]) * W.weights[W.TOPDIFF_START + i];
+			sum += Math.abs(top[i] - top[i+1]) * Weights.topHeightDiffs[i];
 
 		return sum;
 	}
@@ -98,17 +93,17 @@ class Simulator
 			// Adjust top and max height heuristic
 			top[slot + col] = colTop;
 			if (colTop > maxHeight) {
-				heuristic += W.weights[W.MAX_HEIGHT] * (colTop - maxHeight);
+				heuristic += Weights.maxHeight * (colTop - maxHeight);
 				maxHeight = colTop;
 			}
 			// For each field in piece-column - bottom to top
 			for (int row = colBottom; row < colTop; row++) {
 				field[row][col + slot] = turn;
-				heuristic += W.weights[W.TOP_START + col + slot];
+				heuristic += Weights.topHeights[col + slot];
 			}
 			// Adjust holes heuristic by looking for new holes under the col
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
-				heuristic += W.weights[W.HOLES];
+				heuristic += Weights.holes;
 		}
 	}
 
@@ -141,12 +136,12 @@ class Simulator
 
 			// Lower the top
 			top[col]--;
-			heuristic -= W.weights[W.TOP_START + col];
+			heuristic -= Weights.topHeights[col];
 
 			// If a hole opened up, andjust top and heuristic
 			while (top[col] > 0 && field[top[col] - 1][col] == 0) {
-				heuristic -= W.weights[W.TOP_START + col];
-				heuristic -= W.weights[W.HOLES];
+				heuristic -= Weights.topHeights[col];
+				heuristic -= Weights.holes;
 				top[col]--;
 			}
 
@@ -155,8 +150,8 @@ class Simulator
 				newMaxHeight = top[col];
 		}
 
-		heuristic += W.weights[W.CLEARED];
-		heuristic -= W.weights[W.MAX_HEIGHT] * (maxHeight - newMaxHeight);
+		heuristic += Weights.rowsCleared;
+		heuristic -= Weights.maxHeight * (maxHeight - newMaxHeight);
 		maxHeight = newMaxHeight;
 	}
 
@@ -168,7 +163,7 @@ public class PlayerSkeleton {
 	private Simulator gameSim = new Simulator();
 
 	public PlayerSkeleton() {
-		W.setWeights();
+		Weights.setWeights();
 	}
 
 	private double forwardLookAvg(Simulator s, int maxdepth) {
