@@ -9,26 +9,38 @@ class Moves extends State {
 }
 
 class Weights {
-	public double numHoles;
-	public double maxHeight;
-	public double rowsCleared;
-	public double[] colHeights;
-	public double[] adjColHeightDiffs;
+	public int numHoles;
+	public int maxHeight;
+	public int rowsCleared;
+	public int[] colHeights;
+	public int[] adjColHeightDiffs;
 
 	public Weights(int cols) {
-		colHeights = new double[cols];
-		adjColHeightDiffs = new double[cols - 1];
+		colHeights = new int[cols];
+		adjColHeightDiffs = new int[cols - 1];
 	}
 
-	public static Weights getWeights(int cols) {
+	public static Weights jacobWeights(int cols) {
 		Weights w = new Weights(cols);
 		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = .5;
+			w.colHeights[i] = 1;
 		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = 1.5;
-		w.maxHeight = 1.5;
-		w.numHoles = 5;
-		w.rowsCleared = -2;
+			w.adjColHeightDiffs[i] = 3;
+		w.maxHeight = 3;
+		w.numHoles = 10;
+		w.rowsCleared = -4;
+		return w;
+	}
+
+	public static Weights randomWeights(int cols) {
+		Weights w = new Weights(cols);
+		for (int i = 0; i < w.colHeights.length; i++)
+			w.colHeights[i] = PlayerSkeleton.randomWithRange(1,25);
+		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
+			w.adjColHeightDiffs[i] = PlayerSkeleton.randomWithRange(1,25);
+		w.maxHeight = PlayerSkeleton.randomWithRange(1,25);
+		w.numHoles = PlayerSkeleton.randomWithRange(1,25);
+		w.rowsCleared =  PlayerSkeleton.randomWithRange(0,25) * -1;
 		return w;
 	}
 }
@@ -53,7 +65,7 @@ class Simulator
 	// - Column Heights
 	// - Holes
 	// - Cleared
-	public double heuristic;
+	public int heuristic;
 
 	public Simulator(Simulator sim) {
 		this(sim.rows, sim.cols, sim.weights);
@@ -78,8 +90,8 @@ class Simulator
 		maxHeight = sim.maxHeight;
 	}
 
-	public double getHeuristic() {
-		double sum = heuristic;
+	public int getHeuristic() {
+		int sum = heuristic;
 
 		for(int i = 0; i < top.length - 1; i++)
 			sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs[i];
@@ -126,7 +138,7 @@ class Simulator
 			}
 			// Adjust holes heuristic by looking for new holes under the col
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
-				heuristic += weights.colHeights[col + slot];
+        heuristic += weights.numHoles;
 			}
 	}
 
@@ -184,7 +196,6 @@ class Simulator
 
 public class PlayerSkeleton {
 	private Simulator gameSim;
-  private State s = new State();
 
   public PlayerSkeleton(Weights w, int rows,int  cols) {
     gameSim = new Simulator(rows,cols,w);
@@ -198,14 +209,14 @@ public class PlayerSkeleton {
     return gameSim.rowsCleared;
   }
 
-	private double forwardLookAvg(Simulator s, int maxdepth) {
-		double average = 0;
+	private int forwardLookAvg(Simulator s, int maxdepth) {
+		int average = 0;
 		Simulator sim = new Simulator(gameSim);
 
 		// For all possible pieces
 		for (int piece = 0; piece < State.N_PIECES; piece++) {
 			int numMoves = Moves.getNumMoves(piece);
-			double pieceBestHeu = Double.POSITIVE_INFINITY;
+			int pieceBestHeu = Integer.MAX_VALUE;
 
 			// Try all possible moves for piece
 			for (int move = 0; move < numMoves; move++) {
@@ -213,7 +224,7 @@ public class PlayerSkeleton {
 				if (!sim.simMove(move, piece))
 					continue;
 
-				double heu;
+				int heu;
 				if (maxdepth != 1)
 					heu = forwardLookAvg(sim, maxdepth - 1);
 				else
@@ -252,7 +263,12 @@ public class PlayerSkeleton {
 	}
 
   public int randomPiece() {
-    return (int)(Math.random()*7);
+    return randomWithRange(0,6);
+  }
+
+  public static int randomWithRange(int min, int max) {
+       int range = (max - min) + 1;
+       return (int)(Math.random() * range) + min;
   }
 
 }
