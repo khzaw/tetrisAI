@@ -27,7 +27,7 @@ class W {
 		weights[CLEARED] = -2;
 	}
 }
-		
+
 class Simulator
 {
 	// Handy pointers to have locally
@@ -149,7 +149,7 @@ class Simulator
 				heuristic -= W.weights[W.HOLES];
 				top[col]--;
 			}
-			
+
 			// Find the new max height
 			if (top[col] > newMaxHeight)
 				newMaxHeight = top[col];

@@ -14,14 +14,14 @@ public class TFrame extends JFrame implements KeyListener{
 	private static final long serialVersionUID = 1L;
 	public TLabel label = new TLabel(300,700);
 	public State s;
-	
+
 	public int orient, slot;
-	
+
 	public static final int MANUAL = 0;
 	public static final int NONE = 1;
-	
+
 	public int mode = MANUAL;
-	
+
 	//constructor
 	public TFrame (State s){
 		this.s = s;
@@ -37,14 +37,14 @@ public class TFrame extends JFrame implements KeyListener{
 		this.addKeyListener(this);  //may be unnecessary (not certain)
 		setVisible(true);
 	}
-	
+
 	//switches which state is attached to this TFrame
 	public void bindState(State s) {
 		if(s!= null)	s.label = null;
 		this.s = s;
 		s.label = label;
 	}
-	
+
 	///
 	/// ADDED BY DON (AKA Pimp Masta) 1/22/09
 	///
@@ -92,7 +92,7 @@ public class TFrame extends JFrame implements KeyListener{
 						if(orient >= State.pOrients[s.nextPiece])	orient = 0;
 						if(slot > State.COLS-State.pWidth[s.nextPiece][orient])
 							slot = State.COLS-State.pWidth[s.nextPiece][orient];
-						
+
 						s.draw();
 						if(mode == NONE)	{
 							label.text(State.COLS/2.0, State.ROWS/2.0, "You Lose");
@@ -110,10 +110,10 @@ public class TFrame extends JFrame implements KeyListener{
 				System.out.println("unknown mode");
 				break;
 		}
-		
-		
-		
-		
+
+
+
+
 	}
 
 
@@ -124,7 +124,7 @@ public class TFrame extends JFrame implements KeyListener{
 	public void keyTyped(KeyEvent e) {
 
 	}
-	
+
     public void save(String filename) {
         File file = new File(filename);
         String suffix = filename.substring(filename.lastIndexOf('.') + 1);
@@ -141,13 +141,13 @@ public class TFrame extends JFrame implements KeyListener{
         }
         else System.out.println("unknown extension");
     }
-	
+
 	public static void main(String[] args) {
 		State s = new State();
 		TFrame t = new TFrame(s);
 		s.draw();
 		s.drawNext(0,0);
 		//t.save("picture.png");
-		
+
 	}
 }

@@ -31,9 +31,9 @@ import javax.swing.*;
 
 public class TLabel{
 	private static final long serialVersionUID = 1L;
-	
+
 	public JLabel draw;
-	
+
 	// pre-defined colors
 	public static final Color BLACK      = Color.BLACK;
 	public static final Color BLUE       = Color.BLUE;
@@ -84,7 +84,7 @@ public class TLabel{
 	// double buffered graphics
 	private BufferedImage offscreenImage, onscreenImage;
 	protected Graphics2D offscreen, onscreen;
-	
+
 	// change the user coordinate system
 	public void setXscale() { setXscale(DEFAULT_XMIN, DEFAULT_XMAX); }
 	public void setYscale() { setYscale(DEFAULT_YMIN, DEFAULT_YMAX); }
@@ -119,8 +119,8 @@ public class TLabel{
 		j.pack();
 		show();
 	}
-	
-	
+
+
 	// clear the screen with given color
 	public void clear() { clear(DEFAULT_CLEAR_COLOR); }
 	public void clear(Color color) {
@@ -164,7 +164,7 @@ public class TLabel{
 
 	// write the given string in the current font
 	public void setFont() { setFont(DEFAULT_FONT); }
-	public void setFont(Font f) { 
+	public void setFont(Font f) {
 		Toolkit toolkit = java . awt . Toolkit . getDefaultToolkit ();
 		double x = toolkit.getScreenSize().getWidth();
 		double y = toolkit.getScreenSize().getHeight();
@@ -174,7 +174,7 @@ public class TLabel{
 
 		font = f.deriveFont((float) (f.getSize()*scale));
 	}
-	
+
 	public TLabel(int w, int h){
 		width = w;
 		height = h;
@@ -201,45 +201,45 @@ public class TLabel{
 		ImageIcon icon = new ImageIcon(onscreenImage);
 		draw = new JLabel(icon);
 	}
-	
+
 	public void add(Container frame, String spot){
 		frame.add(draw, spot);
 	}
-	
 
-	
+
+
 	public void addML(MouseListener frame){
 		draw.addMouseListener(frame);
 	}
-	
+
 	public void addMML(MouseMotionListener frame){
 		draw.addMouseMotionListener(frame);
 	}
-	
+
 	public void addKL(KeyListener frame){
 		draw.addKeyListener(frame);
 	}
-	
+
 	public void addMWL(MouseWheelListener frame) {
 		draw.addMouseWheelListener(frame);
 	}
-	
+
 	public void remML(MouseListener frame){
 		draw.removeMouseListener(frame);
 	}
-	
+
 	public void remMML(MouseMotionListener frame){
 		draw.removeMouseMotionListener(frame);
 	}
-	
+
 	public void remKL(KeyListener frame){
 		draw.removeKeyListener(frame);
 	}
-	
+
 	public void remMWL(MouseWheelListener frame){
 		draw.removeMouseWheelListener(frame);
 	}
-	
+
 	// draw a line from (x0, y0) to (x1, y1)
 	public void line(double x0, double y0, double x1, double y1) {
 //		System.out.println("drawing a line from " + new Point(x0, y0).toString()+ " to " + new Point(x1,y1).toString());
@@ -252,12 +252,12 @@ public class TLabel{
 	public void pixel(double x, double y) {
 		offscreen.fillRect((int) Math.round(scaleX(x)), (int) Math.round(scaleY(y)), 1, 1);
 	}
-	
+
 	// draw one pixel at (x, y)
 	public void pixelP(double x, double y) {
 		offscreen.fillRect((int) Math.round(x), (int) Math.round(y), 1, 1);
 	}
-	
+
 	// draw one pixel at (x, y)
 	public void pixelP(double x, double y, Color c) {
 		setPenColor(c);
@@ -285,7 +285,7 @@ public class TLabel{
 		else offscreen.draw(new Arc2D.Double(xs - ws/2, ys - hs/2, ws, hs,startAngle, arcRange, Arc2D.OPEN));
 
 	}
-	
+
 	// draw circle of radius r, centered on (x, y); degenerate to pixel if small
 	public void circle(double x, double y, double r) {
 		double xs = scaleX(x);
@@ -295,12 +295,12 @@ public class TLabel{
 		if (ws <= 1 && hs <= 1) pixel(x, y);
 		else offscreen.draw(new Ellipse2D.Double(xs - ws/2, ys - hs/2, ws, hs));
 	}
-	
+
 	public void circleP(double x, double y, double r, Color col) {
 		setPenColor(col);
 		circleP(x,y,r);
 	}
-	
+
 	public void circleP(double x, double y, double r) {
 		double ws = 2*r;
 		double hs = 2*r;
@@ -311,13 +311,13 @@ public class TLabel{
 	}
 
 
-	
+
 	public void circle(double x, double y, double r, Color color) {
 		setPenColor(color);
 		circle(x,y,r);
 	}
-	
-	
+
+
 	// draw filled circle of radius r, centered on (x, y); degenerate to pixel if small
 	public void filledCircle(double x, double y, double r) {
 		double xs = scaleX(x);
@@ -329,7 +329,7 @@ public class TLabel{
 	}
 
 
-	
+
 	public void filledCircleP(double x, double y, double r) {
 		double ws = 2*r;
 		double hs = 2*r;
@@ -422,13 +422,13 @@ public class TLabel{
 		double[] yarray = {y-h/2,y+h/2,y+h/2,y-h/2};
 		polygon(xarray,yarray);
 	}
-	
+
 	public void rectangleLL(double x, double y, double w, double h) {
 		double[] xarray = {x,x,x+w,x+w};
 		double[] yarray = {y,y+h,y+h,y};
 		polygon(xarray,yarray);
 	}
-	
+
 	public void rectangleP(double x, double y, double w, double h) {
 		double[] xarray = {x,x,x+w,x+w};
 		double[] yarray = {y,y+h,y+h,y};
@@ -442,7 +442,7 @@ public class TLabel{
 		filledPolygon(xarray,yarray);
 		setPenColor(DEFAULT_PEN_COLOR);
 	}
-	
+
 	public void rectangleC(double x, double y, double w, double h, Color c) {
 		double[] xarray = {x,x,x+w,x+w};
 		double[] yarray = {y,y+h,y+h,y};
@@ -458,7 +458,7 @@ public class TLabel{
 		filledPolygonP(xarray,yarray);
 		setPenColor(DEFAULT_PEN_COLOR);
 	}
-	
+
 	public void filledRectangleLL(double x, double y, double w, double h, Color c) {
 		double[] xarray = {x,x,x+w,x+w};
 		double[] yarray = {y,y+h,y+h,y};
@@ -479,9 +479,9 @@ public class TLabel{
 		if (Border) polygon(xarray, yarray);
 		setPenColor();
 	}
-	
 
-	
+
+
 	// draw picture (gif, jpg, or png) upperLeft on (x, y), rescaled to w-by-h
 	public void image(double x, double y, Image image, double w, double h) {
 
@@ -497,16 +497,16 @@ public class TLabel{
 					(int) Math.round(hs), null);
 		}
 	}
-	
+
 	// draw picture (gif, jpg, or png) upperLeft on (x, y), rescaled to w-by-h
 	public void imageP(double x, double y, Image image) {
 
 		//if (ws <= 1 && hs <= 1) pixel(x, y);
 
 		offscreen.drawImage(image, (int) Math.round(x),(int) Math.round(y), null);
-		
+
 	}
-	
+
 
 
 	//Invert an image
@@ -528,7 +528,7 @@ public class TLabel{
 			db1.setElem(i, db1.getElem(i));
 
 		}
-		return b2;	  
+		return b2;
 	}
 
 
@@ -544,7 +544,7 @@ public class TLabel{
 		int hs = metrics.getDescent();
 		offscreen.drawString(s, (float) (xs - ws/2.0), (float) (ys + hs));
 	}
-	
+
 	public void textTop(double x, double y, String s) {
 		offscreen.setFont(font);
 		FontMetrics metrics = offscreen.getFontMetrics();
@@ -595,7 +595,7 @@ public class TLabel{
 	public void absText(String s, int x, int y) {
 		offscreen.drawString(s, (float) (x), (float) (y));
 	}
-	
+
 	public void textinvert(double x, double y, String s) {
 		offscreen.setFont(font);
 		FontMetrics metrics = offscreen.getFontMetrics();
@@ -610,10 +610,10 @@ public class TLabel{
 		offscreen.drawImage(bimage2, (int) Math.round(xs - ws/2.0),
 				(int) Math.round(ys + hs), null);
 	}
-	
-	
 
-	
+
+
+
 	// view on-screen, creating new frame if necessary
 	public void show() {
 		onscreen.drawImage(offscreenImage, 0, 0, null);
@@ -627,13 +627,13 @@ public class TLabel{
 
 	}
 
-	
 
 
-	
 
-	
-	
 
-	
+
+
+
+
+
 }

@@ -8,42 +8,42 @@ public class State {
 	public static final int ROWS = 21;
 	public static final int N_PIECES = 7;
 
-	
+
 
 	public boolean lost = false;
-	
-	
-	
 
-	
+
+
+
+
 	public TLabel label;
-	
+
 	//current turn
 	private int turn = 0;
 	private int cleared = 0;
-	
+
 	//each square in the grid - int means empty - other values mean the turn it was placed
 	private int[][] field = new int[ROWS][COLS];
 	//top row+1 of each column
 	//0 means empty
 	private int[] top = new int[COLS];
-	
-	
+
+
 	//number of next piece
 	protected int nextPiece;
-	
-	
-	
+
+
+
 	//all legal moves - first index is piece type - then a list of 2-length arrays
 	protected static int[][][] legalMoves = new int[N_PIECES][][];
-	
+
 	//indices for legalMoves
 	public static final int ORIENT = 0;
 	public static final int SLOT = 1;
-	
+
 	//possible orientations for a given piece type
 	protected static int[] pOrients = {1,2,4,4,4,2,2};
-	
+
 	//the next several arrays define the piece vocabulary in detail
 	//width of the pieces [piece ID][orientation]
 	protected static int[][] pWidth = {
@@ -83,7 +83,7 @@ public class State {
 		{{1,2,2},{3,2}},
 		{{2,2,1},{2,3}}
 	};
-	
+
 	//initialize legalMoves
 	{
 		//for each piece type
@@ -107,10 +107,10 @@ public class State {
 				}
 			}
 		}
-	
+
 	}
-	
-	
+
+
 	public int[][] getField() {
 		return field;
 	}
@@ -122,7 +122,7 @@ public class State {
     public static int[] getpOrients() {
         return pOrients;
     }
-    
+
     public static int[][] getpWidth() {
         return pWidth;
     }
@@ -143,50 +143,50 @@ public class State {
 	public int getNextPiece() {
 		return nextPiece;
 	}
-	
+
 	public boolean hasLost() {
 		return lost;
 	}
-	
+
 	public int getRowsCleared() {
 		return cleared;
 	}
-	
+
 	public int getTurnNumber() {
 		return turn;
 	}
-	
-	
-	
+
+
+
 	//constructor
 	public State() {
 		nextPiece = randomPiece();
 
 	}
-	
+
 	//random integer, returns 0-6
 	private int randomPiece() {
 		return (int)(Math.random()*N_PIECES);
 	}
-	
 
 
-	
-	//gives legal moves for 
+
+
+	//gives legal moves for
 	public int[][] legalMoves() {
 		return legalMoves[nextPiece];
 	}
-	
+
 	//make a move based on the move index - its order in the legalMoves list
 	public void makeMove(int move) {
 		makeMove(legalMoves[nextPiece][move]);
 	}
-	
+
 	//make a move based on an array of orient and slot
 	public void makeMove(int[] move) {
 		makeMove(move[ORIENT],move[SLOT]);
 	}
-	
+
 	//returns false if you lose - true otherwise
 	public boolean makeMove(int orient, int slot) {
 		turn++;
@@ -196,30 +196,30 @@ public class State {
 		for(int c = 1; c < pWidth[nextPiece][orient];c++) {
 			height = Math.max(height,top[slot+c]-pBottom[nextPiece][orient][c]);
 		}
-		
+
 		//check if game ended
 		if(height+pHeight[nextPiece][orient] >= ROWS) {
 			lost = true;
 			return false;
 		}
 
-		
+
 		//for each column in the piece - fill in the appropriate blocks
 		for(int i = 0; i < pWidth[nextPiece][orient]; i++) {
-			
+
 			//from bottom to top of brick
 			for(int h = height+pBottom[nextPiece][orient][i]; h < height+pTop[nextPiece][orient][i]; h++) {
 				field[h][i+slot] = turn;
 			}
 		}
-		
+
 		//adjust top
 		for(int c = 0; c < pWidth[nextPiece][orient]; c++) {
 			top[slot+c]=height+pTop[nextPiece][orient][c];
 		}
-		
+
 		int rowsCleared = 0;
-		
+
 		//check for full rows - starting at the top
 		for(int r = height+pHeight[nextPiece][orient]-1; r >= height; r--) {
 			//check all columns in the row
@@ -247,16 +247,16 @@ public class State {
 				}
 			}
 		}
-	
+
 
 		//pick a new piece
 		nextPiece = randomPiece();
-		
 
-		
+
+
 		return true;
 	}
-	
+
 	public void draw() {
 		label.clear();
 		label.setPenRadius();
@@ -265,9 +265,9 @@ public class State {
 		label.line(COLS, 0, COLS, ROWS+5);
 		label.line(0, 0, COLS, 0);
 		label.line(0, ROWS-1, COLS, ROWS-1);
-		
+
 		//show bricks
-				
+
 		for(int c = 0; c < COLS; c++) {
 			for(int r = 0; r < top[c]; r++) {
 				if(field[r][c] != 0) {
@@ -275,25 +275,25 @@ public class State {
 				}
 			}
 		}
-		
+
 		for(int i = 0; i < COLS; i++) {
 			label.setPenColor(Color.red);
 			label.line(i, top[i], i+1, top[i]);
 			label.setPenColor();
 		}
-		
+
 		label.show();
-		
-		
+
+
 	}
-	
-	public static final Color brickCol = Color.gray; 
-	
+
+	public static final Color brickCol = Color.gray;
+
 	private void drawBrick(int c, int r) {
 		label.filledRectangleLL(c, r, 1, 1, brickCol);
 		label.rectangleLL(c, r, 1, 1);
 	}
-	
+
 	public void drawNext(int slot, int orient) {
 		for(int i = 0; i < pWidth[nextPiece][orient]; i++) {
 			for(int j = pBottom[nextPiece][orient][i]; j <pTop[nextPiece][orient][i]; j++) {
@@ -302,7 +302,7 @@ public class State {
 		}
 		label.show();
 	}
-	
+
 	//visualization
 	//clears the area where the next piece is shown (top)
 	public void clearNext() {
@@ -310,9 +310,9 @@ public class State {
 		label.line(0, 0, 0, ROWS+5);
 		label.line(COLS, 0, COLS, ROWS+5);
 	}
-	
 
-	
+
+
 
 }
 
