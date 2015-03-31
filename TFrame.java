@@ -7,12 +7,19 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import java.awt.BorderLayout;
 
 
 
 public class TFrame extends JFrame implements KeyListener{
 	private static final long serialVersionUID = 1L;
-	public TLabel label = new TLabel(300,700);
+	public JLabel scoreLabel = new JLabel("Woohoo");
+	public JTextField textField = new JTextField();
+	public JPanel panel = new JPanel(new BorderLayout());
+	public TLabel label = new TLabel(300, 700);
 	public State s;
 
 	public int orient, slot;
@@ -29,13 +36,16 @@ public class TFrame extends JFrame implements KeyListener{
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);            // closes all windows when this is closed
 		setTitle("Tetris BKW");
-		setContentPane(label.draw);
+		panel.add(label.draw, BorderLayout.CENTER);
+		panel.add(scoreLabel, BorderLayout.NORTH);
+		getContentPane().add(panel);
 		pack();
 		label.BORDER = .05;
 		label.setXscale(0, State.COLS);
 		label.setYscale(0, State.ROWS+5);
 		this.addKeyListener(this);  //may be unnecessary (not certain)
 		setVisible(true);
+
 	}
 
 	//switches which state is attached to this TFrame
@@ -54,12 +64,17 @@ public class TFrame extends JFrame implements KeyListener{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);            // closes all windows when this is closed
 		setTitle("Eric Whitman's Tetris Simulator");
 		setContentPane(label.draw);
+		this.getContentPane().add(scoreLabel);
 		pack();
 		label.BORDER = .05;
 		label.setXscale(0, State.COLS);
 		label.setYscale(0, State.ROWS+5);
 		this.addKeyListener(this);  //may be unnecessary (not certain)
 		setVisible(true);
+	}
+
+	public void setScoreLabel(int s) {
+		scoreLabel.setText("Score :" + s);
 	}
 
 	public void keyPressed(KeyEvent e) {
