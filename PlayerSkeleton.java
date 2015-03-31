@@ -15,11 +15,13 @@ class Weights {
 	public double[] colHeights;
 	public double[] adjColHeightDiffs;
 
-	public static Weights getWeights(int cols) {
-		Weights w = new Weights();
-		w.colHeights = new double[cols];
-		w.adjColHeightDiffs = new double[cols];
+	public Weights(int cols) {
+		colHeights = new double[cols];
+		adjColHeightDiffs = new double[cols - 1];
+	}
 
+	public static Weights getWeights(int cols) {
+		Weights w = new Weights(cols);
 		for (int i = 0; i < w.colHeights.length; i++)
 			w.colHeights[i] = .5;
 		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
