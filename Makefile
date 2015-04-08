@@ -1,15 +1,12 @@
-SKELETON=PlayerSkeleton.java
-
 all: compile run
 
-Genetic.class: $(SKELETON) Genetic.java
-	javac -g $(SKELETON)
-	javac -g Genetic.java
+PlayerSkeleton.class: PlayerSkeleton.java Genetic.java
+	javac -g PlayerSkeleton.java
 
-compile: Genetic.class
+compile: PlayerSkeleton.class
 
-run:	Genetic.class
-	java Genetic
+run: PlayerSkeleton.class
+	java PlayerSkeleton
 
 clean:
 	rm *.class

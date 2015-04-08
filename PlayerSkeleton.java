@@ -20,6 +20,34 @@ class Weights {
 		adjColHeightDiffs = new int[cols - 1];
 	}
 
+	public int[] toArray() {
+		int[] arr = new int[3 + colHeights.length + adjColHeightDiffs.length];
+		int wi = 0;
+
+		arr[wi++] = numHoles;
+		arr[wi++] = maxHeight;
+		arr[wi++] = rowsCleared;
+		for (int i = 0; i < colHeights.length; i++)
+			arr[wi++] = colHeights[i];
+		for (int i = 0; i < adjColHeightDiffs.length; i++)
+			arr[wi++] = adjColHeightDiffs[i];
+		return arr;
+	}
+
+	public static Weights fromArray(int[] arr) {
+		Weights w = new Weights((arr.length - 2) / 2);
+		int wi = 0;
+
+		w.numHoles = arr[wi++];
+		w.maxHeight = arr[wi++];
+		w.rowsCleared = arr[wi++];
+		for (int i = 0; i < w.colHeights.length; i++)
+			w.colHeights[i] = arr[wi++];
+		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
+			w.adjColHeightDiffs[i] = arr[wi++];
+		return w;
+	}
+
 	public static Weights jacobWeights(int cols) {
 		Weights w = new Weights(cols);
 		for (int i = 0; i < w.colHeights.length; i++)
@@ -35,13 +63,18 @@ class Weights {
 	public static Weights randomWeights(int cols) {
 		Weights w = new Weights(cols);
 		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = PlayerSkeleton.randomWithRange(1,25);
+			w.colHeights[i] = getRandom();
 		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = PlayerSkeleton.randomWithRange(1,25);
-		w.maxHeight = PlayerSkeleton.randomWithRange(1,25);
-		w.numHoles = PlayerSkeleton.randomWithRange(1,25);
-		w.rowsCleared =  PlayerSkeleton.randomWithRange(0,25) * -1;
+			w.adjColHeightDiffs[i] = getRandom();
+		w.maxHeight = getRandom();
+		w.numHoles = getRandom();
+		w.rowsCleared = getRandom();
 		return w;
+	}
+
+	public static int getRandom() {
+		java.util.Random r = new java.util.Random();
+		return r.nextInt(100);
 	}
 }
 
@@ -138,7 +171,7 @@ class Simulator
 			}
 			// Adjust holes heuristic by looking for new holes under the col
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
-        heuristic += weights.numHoles;
+				heuristic += weights.numHoles;
 			}
 	}
 
@@ -197,21 +230,20 @@ class Simulator
 public class PlayerSkeleton {
 	private Simulator gameSim;
 
-  public PlayerSkeleton(Weights w, int rows,int  cols) {
-    gameSim = new Simulator(rows,cols,w);
-  }
+	public PlayerSkeleton(Weights w, int rows,int  cols) {
+		gameSim = new Simulator(rows,cols,w);
+	}
 
-  public int playAndReturnScore() {
-    int piece = randomPiece();
-		while(gameSim.simMove(pickMove(Moves.getLegalMoves(piece), piece), piece)) {
-      piece = randomPiece();
-    }
-    return gameSim.rowsCleared;
-  }
+	public int playAndReturnScore() {
+		int piece = randomPiece();
+		while(gameSim.simMove(pickMove(Moves.getLegalMoves(piece), piece), piece))
+			piece = randomPiece();
+		return gameSim.rowsCleared;
+	}
 
 	private int forwardLookAvg(Simulator s, int maxdepth) {
 		int average = 0;
-		Simulator sim = new Simulator(gameSim);
+		Simulator sim = new Simulator(s);
 
 		// For all possible pieces
 		for (int piece = 0; piece < State.N_PIECES; piece++) {
@@ -262,13 +294,38 @@ public class PlayerSkeleton {
 		return bestMove;
 	}
 
-  public int randomPiece() {
-    return randomWithRange(0,6);
-  }
+	public int randomPiece() {
+		return randomWithRange(0,6);
+	}
 
-  public static int randomWithRange(int min, int max) {
-       int range = (max - min) + 1;
-       return (int)(Math.random() * range) + min;
-  }
+	public static int randomWithRange(int min, int max) {
+		int range = (max - min) + 1;
+		return (int)(Math.random() * range) + min;
+	}
 
+	public static void main(String[] args) {
+		State s = new State();
+		TFrame tFrame = new TFrame(s);
+
+		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
+		Weights w = gen.train(100); // Number of generations
+
+		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+
+		while(!s.hasLost()) {
+			int move = p.pickMove(s.legalMoves(), s.getNextPiece());
+			p.gameSim.simMove(move, s.getNextPiece());
+			s.makeMove(move);
+			s.draw();
+			tFrame.setScoreLabel(s.getRowsCleared());
+			s.drawNext(0,0);
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+	}
 }
