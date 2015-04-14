@@ -28,7 +28,7 @@ class Individual {
 		double scale = 1;
 		for (int i = 0; i < chromosomes.length; i++) {
 			int chr = chromosomes[i];
-			int mutated = (int) ((double)chr * (stdDev*r.nextGaussian()+1.0) * scale );
+			int mutated = (int) ((double) Math.round(chr * (stdDev*r.nextGaussian()+1.0) * scale) );
 			chromosomes[i] = mutated;
 		}
 	}
@@ -42,6 +42,7 @@ class Individual {
 }
 
 class Genetic {
+	Individual allTimeBest;
 	Individual[] individuals;
 	PlayerSkeleton p;
 	int rows, cols, populationSize;
@@ -51,6 +52,8 @@ class Genetic {
 		this.rows = rows;
 		this.cols = cols;
 		this.populationSize = populationSize;
+		this.allTimeBest = new Individual(cols);
+		this.allTimeBest.fitness = 0;
 		for (int i = 0; i < populationSize; i++)
 			individuals[i] = new Individual(cols);
 	}
@@ -62,7 +65,7 @@ class Genetic {
 			PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
 			// individuals[i].fitness = p.playAndReturnScore();
 
-			int noRounds = 1; // How many rounds to take the average of
+			int noRounds = 8; // How many rounds to take the average of
 			int score = 0;
 			for(int j = 0; j < noRounds; j++) {
 				score += p.playAndReturnScore();
@@ -149,8 +152,14 @@ class Genetic {
 		for (int i = 0; i < individuals.length; i++)
 			if (individuals[i].fitness > best.fitness)
 				best = individuals[i];
+
 		System.out.format("\nBest: ");
 		best.print(1);
+		// if(best.fitness > allTimeBest.fitness) {
+		// 	allTimeBest.fitness = best.fitness;
+		// 	System.arraycopy(best.chromosomes, 0, allTimeBest.chromosomes, 0, best.chromosomes.length);
+		// }
+
 		return best;
 	}
 
@@ -174,19 +183,3 @@ class Genetic {
 		return Weights.fromArray(best.chromosomes);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -43,21 +43,41 @@ class Weights {
 
 	public static Weights jacobWeights() {
 		Weights w = new Weights();
+		w.numHoles = 10;
+		w.maxHeight = 3;
+		w.rowsCleared = -4;
 		w.colHeights = 1;
 		w.adjColHeightDiffs = 3;
-		w.maxHeight = 3;
-		w.numHoles = 10;
-		w.rowsCleared = -4;
+		return w;
+	}
+
+	public static Weights martinWeights() {
+		Weights w = new Weights(); // [233][-44][232][64][68]
+		w.numHoles = 233;
+		w.maxHeight = -44;
+		w.rowsCleared = 232;
+		w.colHeights = 64;
+		w.adjColHeightDiffs = 68;
+		return w;
+	}
+
+	public static Weights someWeights() {
+		Weights w = new Weights(); // [239][-2][116][39][53]
+		w.numHoles = 239;
+		w.maxHeight = -2;
+		w.rowsCleared = 116;
+		w.colHeights = 39;
+		w.adjColHeightDiffs = 53;
 		return w;
 	}
 
 	public static Weights randomWeights() {
 		Weights w = new Weights();
+		w.numHoles = getRandom();
+		w.maxHeight = getRandom();
+		w.rowsCleared = getRandom();
 		w.colHeights = getRandom();
 		w.adjColHeightDiffs = getRandom();
-		w.maxHeight = getRandom();
-		w.numHoles = getRandom();
-		w.rowsCleared = getRandom();
 		return w;
 	}
 
@@ -297,10 +317,12 @@ public class PlayerSkeleton {
 		State s = new State();
 		TFrame tFrame = new TFrame(s);
 
-		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
-		Weights w = gen.train(20); // Number of generations
+		// Genetic gen = new Genetic(100, State.ROWS-10, State.COLS);
+		// Weights w = gen.train(30); // Number of generations
 
 		// Weights w = Weights.jacobWeights();
+		// Weights w = Weights.martinWeights();
+		Weights w = Weights.someWeights();
 		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
 
 		while(!s.hasLost()) {
