@@ -23,9 +23,14 @@ class Individual {
 	}
 
 	public void mutate() {
-		for (int i = 0; i < chromosomes.length; i++)
-			if (r.nextInt(101) < MUCHANCE)
-				chromosomes[i] = Weights.getRandom();
+		double stdDev = 0.1; // std dev for random multiplication and scale factor
+		// double scale = 2*stdDev*r.nextGaussian()+1.0;
+		double scale = 1;
+		for (int i = 0; i < chromosomes.length; i++) {
+			int chr = chromosomes[i];
+			int mutated = (int) ((double)chr * (stdDev*r.nextGaussian()+1.0) * scale );
+			chromosomes[i] = mutated;
+		}
 	}
 
 	public void print(int num) {
@@ -39,12 +44,13 @@ class Individual {
 class Genetic {
 	Individual[] individuals;
 	PlayerSkeleton p;
-	int rows, cols;
+	int rows, cols, populationSize;
 
 	public Genetic(int populationSize, int rows, int cols) {
 		individuals = new Individual[populationSize];
 		this.rows = rows;
 		this.cols = cols;
+		this.populationSize = populationSize;
 		for (int i = 0; i < populationSize; i++)
 			individuals[i] = new Individual(cols);
 	}
@@ -54,7 +60,14 @@ class Genetic {
 		for (int i = 0; i < individuals.length; i++) {
 			w = Weights.fromArray(individuals[i].chromosomes);
 			PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
-			individuals[i].fitness = p.playAndReturnScore();
+			// individuals[i].fitness = p.playAndReturnScore();
+
+			int noRounds = 1; // How many rounds to take the average of
+			int score = 0;
+			for(int j = 0; j < noRounds; j++) {
+				score += p.playAndReturnScore();
+			}
+			individuals[i].fitness = score/noRounds;
 		}
 	}
 
@@ -68,7 +81,7 @@ class Genetic {
 	private Individual selectParent(int rand, Individual exclude) {
 		int i = 0;
 		Individual indi;
-				
+
 		while (rand >= 0) {
 			indi = individuals[i++];
 			if (rand < indi.fitness && indi != exclude) {
@@ -86,7 +99,11 @@ class Genetic {
 		Individual[] children = new Individual[individuals.length];
 		Individual p1, p2;
 
-		for (int i = 0; i < children.length; i++) {
+		// keep best 1
+		children[0] = getBest();
+
+		// create the rest (NOTE FROM i = 1)
+		for (int i = 1; i < children.length; i++) {
 			p1 = selectParent(individuals[0].r.nextInt(total), null);
 			p2 = selectParent(individuals[0].r.nextInt(total), null);
 			children[i] = Individual.procreate(p1, p2);
@@ -139,8 +156,10 @@ class Genetic {
 
 	private void printGenerationInfo(int gen) {
 		System.out.format("\nGeneration %d:\n", gen);
-		for (int i = 0; i < individuals.length; i++)
+		for (int i = 0; i < individuals.length; i++) {
 			individuals[i].print(i);
+		}
+		System.out.println("\nGENERATION AVERAGE: " + totalFitness()/populationSize);
 	}
 
 	public Weights train(int generations) {

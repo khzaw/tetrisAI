@@ -63,7 +63,7 @@ class Weights {
 
 	public static int getRandom() {
 		java.util.Random r = new java.util.Random();
-		return r.nextInt(100);
+		return r.nextInt(501)-250;
 	}
 }
 
@@ -273,8 +273,8 @@ public class PlayerSkeleton {
 			if (!sim.simMove(move, piece))
 				continue;
 
-			// double heu = forwardLookAvg(sim, 1);
-			double heu = sim.getHeuristic();
+			double heu = forwardLookAvg(sim, 1);
+			// double heu = sim.getHeuristic();
 			if (heu < bestHeuristic) {
 				bestMove = move;
 				bestHeuristic = heu;
@@ -297,19 +297,19 @@ public class PlayerSkeleton {
 		State s = new State();
 		TFrame tFrame = new TFrame(s);
 
-		// Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
-		// Weights w = gen.train(10); // Number of generations
+		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
+		Weights w = gen.train(20); // Number of generations
 
-		Weights w = Weights.jacobWeights();
+		// Weights w = Weights.jacobWeights();
 		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
 
 		while(!s.hasLost()) {
 			int move = p.pickMove(s.legalMoves(), s.getNextPiece());
 			p.gameSim.simMove(move, s.getNextPiece());
 			s.makeMove(move);
-			s.draw();
+			// s.draw();
 			tFrame.setScoreLabel(s.getRowsCleared());
-			s.drawNext(0,0);
+			// s.drawNext(0,0);
 			try {
 				Thread.sleep(00);
 			} catch (InterruptedException e) {
