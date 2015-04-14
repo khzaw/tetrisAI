@@ -5,7 +5,7 @@ class Individual {
 	java.util.Random r;
 
 	public Individual (int cols) {
-		chromosomes = Weights.randomWeights(cols).toArray();
+		chromosomes = Weights.randomWeights().toArray();
 		this.cols = cols;
 		r = new java.util.Random();
 	}
@@ -94,6 +94,7 @@ class Genetic {
 		}
 
 		individuals = children;
+		System.out.println();
 	}
 
 	private void selectAndProcreate() {

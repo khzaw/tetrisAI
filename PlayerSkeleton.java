@@ -9,68 +9,86 @@ class Moves extends State {
 }
 
 class Weights {
-	public int numHoles;
-	public int maxHeight;
-	public int rowsCleared;
-	public int[] colHeights;
-	public int[] adjColHeightDiffs;
+	// public int numHoles;
+	// public int maxHeight;
+	// public int rowsCleared;
+	// public int colHeights;
+	// public int adjColHeightDiffs;
 
-	public Weights(int cols) {
-		colHeights = new int[cols];
-		adjColHeightDiffs = new int[cols - 1];
-	}
+	public int landingHeight;
+	public int rowsCleared;
+	public int rowTrans;
+	public int colTrans;
+	public int numHoles;
+	public int wellSums;
+
+	public Weights() {}
 
 	public int[] toArray() {
-		int[] arr = new int[3 + colHeights.length + adjColHeightDiffs.length];
+		// int[] arr = new int[5];
+		int[] arr = new int[6];
 		int wi = 0;
 
-		arr[wi++] = numHoles;
-		arr[wi++] = maxHeight;
+		arr[wi++] = landingHeight;
 		arr[wi++] = rowsCleared;
-		for (int i = 0; i < colHeights.length; i++)
-			arr[wi++] = colHeights[i];
-		for (int i = 0; i < adjColHeightDiffs.length; i++)
-			arr[wi++] = adjColHeightDiffs[i];
+		arr[wi++] = rowTrans;
+		arr[wi++] = colTrans;
+		arr[wi++] = numHoles;
+		arr[wi++] = wellSums;
+
+		// arr[wi++] = numHoles;
+		// arr[wi++] = maxHeight;
+		// arr[wi++] = rowsCleared;
+		// arr[wi++] = colHeights;
+		// arr[wi++] = adjColHeightDiffs;
 		return arr;
 	}
 
 	public static Weights fromArray(int[] arr) {
-		Weights w = new Weights((arr.length - 2) / 2);
+		Weights w = new Weights();
 		int wi = 0;
 
-		w.numHoles = arr[wi++];
-		w.maxHeight = arr[wi++];
+		w.landingHeight = arr[wi++];
 		w.rowsCleared = arr[wi++];
-		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = arr[wi++];
-		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = arr[wi++];
+		w.rowTrans = arr[wi++];
+		w.colTrans = arr[wi++];
+		w.numHoles = arr[wi++];
+		w.wellSums = arr[wi++];
+
+		// w.numHoles = arr[wi++];
+		// w.maxHeight = arr[wi++];
+		// w.rowsCleared = arr[wi++];
+		// w.colHeights = arr[wi++];
+		// w.adjColHeightDiffs = arr[wi++];
 		return w;
 	}
 
-	public static Weights jacobWeights(int cols) {
-		Weights w = new Weights(cols);
-		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = 1;
-		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = 3;
-		w.maxHeight = 3;
-		w.numHoles = 10;
-		w.rowsCleared = -4;
+	public static Weights jacobWeights() {
+		Weights w = new Weights();
+		w.landingHeight = 450;
+		w.rowsCleared = -342;
+		w.rowTrans = 322;
+		w.colTrans = 935;
+		w.numHoles = 790;
+		w.wellSums = 339;
+
+		// w.colHeights = 1;
+		// w.adjColHeightDiffs = 3;
+		// w.maxHeight = 3;
+		// w.numHoles = 10;
+		// w.rowsCleared = -4;
 		return w;
 	}
 
-	public static Weights randomWeights(int cols) {
-		Weights w = new Weights(cols);
-		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = getRandom();
-		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = getRandom();
-		w.maxHeight = getRandom();
-		w.numHoles = getRandom();
-		w.rowsCleared = getRandom();
-		return w;
-	}
+	// public static Weights randomWeights() {
+	// 	Weights w = new Weights();
+	// 	w.colHeights = getRandom();
+	// 	w.adjColHeightDiffs = getRandom();
+	// 	w.maxHeight = getRandom();
+	// 	w.numHoles = getRandom();
+	// 	w.rowsCleared = getRandom();
+	// 	return w;
+	// }
 
 	public static int getRandom() {
 		java.util.Random r = new java.util.Random();
@@ -98,7 +116,7 @@ class Simulator
 	// - Column Heights
 	// - Holes
 	// - Cleared
-	public int heuristic;
+	public int heuristic, mheur;
 
 	public Simulator(Simulator sim) {
 		this(sim.rows, sim.cols, sim.weights);
@@ -124,10 +142,80 @@ class Simulator
 	}
 
 	public int getHeuristic() {
-		int sum = heuristic;
+		// int sum = heuristic;
 
-		for(int i = 0; i < top.length - 1; i++)
-			sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs[i];
+		// for(int i = 0; i < top.length - 1; i++)
+		// 	sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs;
+
+		int sum = mheur;
+		// int n_holes = 0;
+		int n_coltrans = 0;
+		int n_rowtrans = 0;
+		int n_wells = 0;
+		int a, b, c, d;
+
+		// coltrans
+		for(int col = 0; col < cols; col++) {
+			for(int row = 0; row < rows-2; row++) {
+				a=field[row][col];
+				b=field[row+1][col];
+
+				if( a!=0 && b==0 ) {
+					n_coltrans++;
+				}else if(a==0 && b != 0) {
+					n_coltrans++;
+				}
+			}
+		}
+
+		// rowtrans
+		for(int col = 0; col < cols-1; col++) {
+			for(int row = 0; row < rows-1; row++) {
+				a=field[row][col];
+				b=field[row][col+1];
+
+				if( a!=0 && b==0 ) {
+					n_rowtrans++;
+				}else if(a==0 && b != 0) {
+					n_rowtrans++;
+				}
+			}
+		}
+
+		// wells (inner)
+		for(int col = 1; col < cols-1; col++) {
+			for(int row = 0; row < rows-1; row++) {
+				a=field[row][col-1];
+				b=field[row][col];
+				c=field[row][col+1];
+
+				if( a!=0 && b==0 && c!=0 ) {
+					n_wells++;
+				}
+			}
+		}
+
+		// wells (edges)
+		for(int row = 0; row < rows-1; row++) {
+			a=field[row][0];
+			b=field[row][1];
+
+			c=field[row][cols-2];
+			d=field[row][cols-1];
+
+			if( a==0 && b!=0 ) {
+				n_wells++;
+			}
+
+			if( c!=0 && d==0 ) {
+				n_wells++;
+			}
+		}
+
+		sum += n_coltrans * weights.colTrans;
+		sum += n_rowtrans * weights.rowTrans;
+		sum += n_wells * weights.wellSums;
+		// sum += maxHeight * weights.landingHeight;
 
 		return sum;
 	}
@@ -161,18 +249,22 @@ class Simulator
 			// Adjust top and max height heuristic
 			top[slot + col] = colTop;
 			if (colTop > maxHeight) {
-				heuristic += weights.maxHeight * (colTop - maxHeight);
+				// heuristic += weights.maxHeight * (colTop - maxHeight);
 				maxHeight = colTop;
 			}
 			// For each field in piece-column - bottom to top
 			for (int row = colBottom; row < colTop; row++) {
 				field[row][col + slot] = turn;
-				heuristic += weights.colHeights[col + slot];
+				// heuristic += weights.colHeights;
 			}
 			// Adjust holes heuristic by looking for new holes under the col
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
-				heuristic += weights.numHoles;
-			}
+				// heuristic += weights.numHoles;
+				mheur += weights.numHoles;
+		}
+
+		// System.out.println(top[slot]);
+		mheur += top[slot]*weights.landingHeight;
 	}
 
 	private void clearRows(int piece, int orient, int height) {
@@ -205,12 +297,12 @@ class Simulator
 
 			// Lower the top
 			top[col]--;
-			heuristic -= weights.colHeights[col];
+			// heuristic -= weights.colHeights;
 
-			// If a hole opened up, andjust top and heuristic
+			// If a hole opened up, adjust top and heuristic
 			while (top[col] > 0 && field[top[col] - 1][col] == 0) {
-				heuristic -= weights.colHeights[col];
-				heuristic -= weights.numHoles;
+				// heuristic -= weights.colHeights;
+				// heuristic -= weights.numHoles;
 				top[col]--;
 			}
 
@@ -219,9 +311,11 @@ class Simulator
 				newMaxHeight = top[col];
 		}
 
-		heuristic += weights.rowsCleared;
-		heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
+		// heuristic += weights.rowsCleared;
+		// heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
 		maxHeight = newMaxHeight;
+		mheur += weights.rowsCleared;
+		mheur -= weights.landingHeight; // because if row removed then landing height was less
 	}
 
 }
@@ -284,7 +378,8 @@ public class PlayerSkeleton {
 			if (!sim.simMove(move, piece))
 				continue;
 
-			double heu = forwardLookAvg(sim, 1);
+			// double heu = forwardLookAvg(sim, 1);
+			double heu = sim.getHeuristic();
 			if (heu < bestHeuristic) {
 				bestMove = move;
 				bestHeuristic = heu;
@@ -307,9 +402,10 @@ public class PlayerSkeleton {
 		State s = new State();
 		TFrame tFrame = new TFrame(s);
 
-		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
-		Weights w = gen.train(100); // Number of generations
+		// Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
+		// Weights w = gen.train(10); // Number of generations
 
+		Weights w = Weights.jacobWeights();
 		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
 
 		while(!s.hasLost()) {
@@ -320,7 +416,7 @@ public class PlayerSkeleton {
 			tFrame.setScoreLabel(s.getRowsCleared());
 			s.drawNext(0,0);
 			try {
-				Thread.sleep(100);
+				Thread.sleep(00);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
