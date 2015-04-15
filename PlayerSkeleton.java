@@ -1,3 +1,5 @@
+import java.util.*;
+
 class Moves extends State {
 	public static int[][][] allMoves = legalMoves;
 	public static int getNumMoves(int piece) {
@@ -8,22 +10,40 @@ class Moves extends State {
 	}
 }
 
-class Weights {
+class Features {
 	public int numHoles;
 	public int maxHeight;
 	public int rowsCleared;
 	public int[] colHeights;
 	public int[] adjColHeightDiffs;
 
-	public Weights(int cols) {
+	private int cols;
+
+	private static int numFeatures(int cols) {
+		return 3 + cols + cols - 1;
+	}
+
+	public Features(int cols) {
 		colHeights = new int[cols];
 		adjColHeightDiffs = new int[cols - 1];
+		this.cols = cols;
+	}
+
+	public Features(Features feat) {
+		this(feat.cols);
+		System.arraycopy(feat.colHeights, 0, colHeights, 0, colHeights.length);
+		System.arraycopy(feat.adjColHeightDiffs, 0,
+		                 adjColHeightDiffs, 0, adjColHeightDiffs.length);
+		rowsCleared = feat.rowsCleared;
+		maxHeight = feat.maxHeight;
+		numHoles = feat.numHoles;
 	}
 
 	public int[] toArray() {
-		int[] arr = new int[3 + colHeights.length + adjColHeightDiffs.length];
-		int wi = 0;
+		int[] arr = new int[numFeatures(cols) + 1];
+		int wi = 1;
 
+		arr[0] = 1; // for multiplying with the "offset weight";
 		arr[wi++] = numHoles;
 		arr[wi++] = maxHeight;
 		arr[wi++] = rowsCleared;
@@ -34,47 +54,34 @@ class Weights {
 		return arr;
 	}
 
-	public static Weights fromArray(int[] arr) {
-		Weights w = new Weights((arr.length - 2) / 2);
-		int wi = 0;
+	public double heu(double[] w) {
+		double heu = 0;
+		int[] featarr = toArray();
+		for (int i = 0; i < w.length; i++)
+			heu += w[i] * featarr[i];
+		return heu;
+	}
 
-		w.numHoles = arr[wi++];
-		w.maxHeight = arr[wi++];
-		w.rowsCleared = arr[wi++];
-		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = arr[wi++];
-		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = arr[wi++];
+	public static double[] randomWeights(int cols) {
+		double[] w = new double[numFeatures(cols) + 1];
+		for (int i = 0; i < w.length; i++)
+			w[i] = Math.random()*10-5; // -1 to 1
 		return w;
 	}
 
-	public static Weights jacobWeights(int cols) {
-		Weights w = new Weights(cols);
-		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = 1;
-		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = 3;
-		w.maxHeight = 3;
-		w.numHoles = 10;
-		w.rowsCleared = -4;
-		return w;
-	}
+	public static double[] jacobWeights(int cols) {
+		double[] w = new double[numFeatures(cols) + 1];
+		int wi = 1;
 
-	public static Weights randomWeights(int cols) {
-		Weights w = new Weights(cols);
-		for (int i = 0; i < w.colHeights.length; i++)
-			w.colHeights[i] = getRandom();
-		for (int i = 0; i < w.adjColHeightDiffs.length; i++)
-			w.adjColHeightDiffs[i] = getRandom();
-		w.maxHeight = getRandom();
-		w.numHoles = getRandom();
-		w.rowsCleared = getRandom();
+		w[0] = 0;
+		w[wi++] = 5;
+		w[wi++] = 1.5;
+		w[wi++] = -2;
+		for (int i = 0; i < cols; i++)
+			w[wi++] = 0.5;
+		for (int i = 0; i < cols - 1; i++)
+			w[wi++] = 1.5;
 		return w;
-	}
-
-	public static int getRandom() {
-		java.util.Random r = new java.util.Random();
-		return r.nextInt(100);
 	}
 }
 
@@ -88,28 +95,37 @@ class Simulator
 	private static int[][] pHeight = State.getpHeight();
 
 	// Simulator state
-	public int[][] field = new int[State.ROWS][State.COLS];
-	public int[] top = new int[State.COLS];
-	public int turn, maxHeight, rowsCleared, rows, cols;
-	public Weights weights;
-
-	// For quick heuristics, simMove keeps this field updated for:
-	// - Max height
-	// - Column Heights
-	// - Holes
-	// - Cleared
-	public int heuristic;
+	private int[][] field;
+	private int[] top;
+	private int turn, score, rows, cols;
+	private boolean lost = false;
+	private Features feat;
 
 	public Simulator(Simulator sim) {
-		this(sim.rows, sim.cols, sim.weights);
+		this(sim.rows, sim.cols);
 	}
 
-	public Simulator(int rows, int cols, Weights w) {
-		this.weights = w;
+	public Simulator(int rows, int cols) {
 		this.rows = rows;
 		this.cols = cols;
 		this.field = new int[rows][cols];
 		this.top = new int[cols];
+		this.feat = new Features(cols);
+	}
+
+	public int getScore() {
+		return score;
+	}
+
+	public void reset() {
+		Arrays.fill(top, 0);
+		for (int i = 0; i < field.length; i++)
+			Arrays.fill(field[i], 0);
+
+		turn = 0;
+		score = 0;
+		lost = false;
+		this.feat = new Features(cols);
 	}
 
 	public void revertTo(Simulator sim) {
@@ -118,18 +134,20 @@ class Simulator
 			System.arraycopy(sim.field[i], 0, field[i], 0, field[i].length);
 
 		turn = sim.turn;
-		rowsCleared = sim.rowsCleared;
-		heuristic = sim.heuristic;
-		maxHeight = sim.maxHeight;
+		score = sim.score;
+		lost = sim.lost;
+		feat = new Features(sim.feat);
 	}
 
-	public int getHeuristic() {
-		int sum = heuristic;
-
+	public Features getFeatures() {
 		for(int i = 0; i < top.length - 1; i++)
-			sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs[i];
+			feat.adjColHeightDiffs[i] = Math.abs(top[i] - top[i+1]);
 
-		return sum;
+		return new Features(feat);
+	}
+
+	public boolean hasLost() {
+		return lost;
 	}
 
 	public boolean simMove(int move, int piece) {
@@ -144,11 +162,14 @@ class Simulator
 			height = Math.max(height, top[slot + col] - pBottom[piece][orient][col]);
 
 		// Check if game ended
-		if(height + pHeight[piece][orient] >= this.rows)
+		if(height + pHeight[piece][orient] >= this.rows) {
+			lost = true;
 			return false;
+		}
 
 		placePiece(piece, orient, slot, height);
 		clearRows(piece, orient, height);
+
 		return true;
 	}
 
@@ -160,33 +181,33 @@ class Simulator
 
 			// Adjust top and max height heuristic
 			top[slot + col] = colTop;
-			if (colTop > maxHeight) {
-				heuristic += weights.maxHeight * (colTop - maxHeight);
-				maxHeight = colTop;
-			}
+			feat.colHeights[slot + col] = colTop;
+
+			if (colTop > feat.maxHeight)
+				feat.maxHeight = colTop;
+
 			// For each field in piece-column - bottom to top
-			for (int row = colBottom; row < colTop; row++) {
+			for (int row = colBottom; row < colTop; row++)
 				field[row][col + slot] = turn;
-				heuristic += weights.colHeights[col + slot];
-			}
-			// Adjust holes heuristic by looking for new holes under the col
+
+			// Adjust holes feature by looking for new holes under the col
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
-				heuristic += weights.numHoles;
-			}
+				feat.numHoles++;
+		}
 	}
 
 	private void clearRows(int piece, int orient, int height) {
+		feat.rowsCleared = 0;
 		// Check for full rows - starting at the top of the piece
 		for (int row = height + pHeight[piece][orient] - 1; row >= height; row--) {
 			boolean full = true;
 
 			// Is this row full?
-			for (int col = 0; col < this.cols; col++) {
+			for (int col = 0; col < this.cols; col++)
 				if (field[row][col] == 0) {
 					full = false;
 					break;
 				}
-			}
 
 			if (full)
 				removeRow(row);
@@ -195,9 +216,10 @@ class Simulator
 
 	private void removeRow(int row) {
 		int newMaxHeight = 0;
-		rowsCleared++;
+		feat.rowsCleared++;
+		score++;
 
-		// For each column in row
+		// For each column
 		for (int col = 0; col < this.cols; col++) {
 			// Slide down all bricks
 			for (int r = row; r < top[col]; r++)
@@ -205,13 +227,13 @@ class Simulator
 
 			// Lower the top
 			top[col]--;
-			heuristic -= weights.colHeights[col];
+			feat.colHeights[col]--;
 
-			// If a hole opened up, andjust top and heuristic
+			// If a hole opened up, andjust top
 			while (top[col] > 0 && field[top[col] - 1][col] == 0) {
-				heuristic -= weights.colHeights[col];
-				heuristic -= weights.numHoles;
 				top[col]--;
+				feat.colHeights[col]--;
+				feat.numHoles--;
 			}
 
 			// Find the new max height
@@ -219,26 +241,37 @@ class Simulator
 				newMaxHeight = top[col];
 		}
 
-		heuristic += weights.rowsCleared;
-		heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
-		maxHeight = newMaxHeight;
+		feat.maxHeight = newMaxHeight;
 	}
-
 }
 
 
 public class PlayerSkeleton {
 	private Simulator gameSim;
+	private double[] w;
 
-	public PlayerSkeleton(Weights w, int rows,int  cols) {
-		gameSim = new Simulator(rows,cols,w);
+	public PlayerSkeleton(int rows, int cols, double[] w) {
+		this.w = w;
+		gameSim = new Simulator(rows, cols);
+	}
+
+	public int playAndGatherMoveInfo(List<MoveInfo> gameMoves) {
+		gameSim.reset();
+		while (!gameSim.hasLost()) {
+			int piece = randomPiece();
+			int move = pickMove(Moves.getLegalMoves(piece), piece);
+			gameMoves.add(new MoveInfo(gameSim.getFeatures()));
+		}
+		return gameSim.getScore();
 	}
 
 	public int playAndReturnScore() {
-		int piece = randomPiece();
-		while(gameSim.simMove(pickMove(Moves.getLegalMoves(piece), piece), piece))
-			piece = randomPiece();
-		return gameSim.rowsCleared;
+		gameSim.reset();
+		while (!gameSim.hasLost()) {
+			int piece = randomPiece();
+			int move = pickMove(Moves.getLegalMoves(piece), piece);
+		}
+		return gameSim.getScore();
 	}
 
 	private int forwardLookAvg(Simulator s, int maxdepth) {
@@ -248,7 +281,7 @@ public class PlayerSkeleton {
 		// For all possible pieces
 		for (int piece = 0; piece < State.N_PIECES; piece++) {
 			int numMoves = Moves.getNumMoves(piece);
-			int pieceBestHeu = Integer.MAX_VALUE;
+			double pieceBestHeu = Double.POSITIVE_INFINITY;
 
 			// Try all possible moves for piece
 			for (int move = 0; move < numMoves; move++) {
@@ -256,11 +289,11 @@ public class PlayerSkeleton {
 				if (!sim.simMove(move, piece))
 					continue;
 
-				int heu;
+				double heu;
 				if (maxdepth != 1)
 					heu = forwardLookAvg(sim, maxdepth - 1);
 				else
-					heu = sim.getHeuristic();
+					heu = sim.getFeatures().heu(w);
 
 				if (heu < pieceBestHeu)
 					pieceBestHeu = heu;
@@ -284,46 +317,42 @@ public class PlayerSkeleton {
 			if (!sim.simMove(move, piece))
 				continue;
 
-			double heu = forwardLookAvg(sim, 1);
+			double heu = sim.getFeatures().heu(w); //forwardLookAvg(sim, 1);
 			if (heu < bestHeuristic) {
 				bestMove = move;
 				bestHeuristic = heu;
 			}
 		}
 
+		gameSim.simMove(bestMove, piece);
 		return bestMove;
 	}
 
-	public int randomPiece() {
-		return randomWithRange(0,6);
-	}
-
-	public static int randomWithRange(int min, int max) {
-		int range = (max - min) + 1;
-		return (int)(Math.random() * range) + min;
+	private int randomPiece() {
+		return (int)(Math.random() * 7);
 	}
 
 	public static void main(String[] args) {
 		State s = new State();
 		TFrame tFrame = new TFrame(s);
 
-		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
-		Weights w = gen.train(100); // Number of generations
+		SquaredError trainer = new SquaredError(State.ROWS, State.COLS);
+		double[] w = trainer.train(6, 40);
+		//double[] w = Features.jacobWeights(State.COLS);
 
-		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+		PlayerSkeleton bob = new PlayerSkeleton(State.ROWS, State.COLS, w);
 
 		while(!s.hasLost()) {
-			int move = p.pickMove(s.legalMoves(), s.getNextPiece());
-			p.gameSim.simMove(move, s.getNextPiece());
+			int move = bob.pickMove(s.legalMoves(), s.getNextPiece());
 			s.makeMove(move);
 			s.draw();
 			tFrame.setScoreLabel(s.getRowsCleared());
 			s.drawNext(0,0);
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			//try {
+			//	Thread.sleep(100);
+			//} catch (InterruptedException e) {
+			//	e.printStackTrace();
+			//}
 		}
 
 		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
