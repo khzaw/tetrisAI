@@ -58,6 +58,12 @@ class Genetic {
 			individuals[i] = new Individual(cols);
 	}
 
+	private void resetIndividuals(){
+		this.allTimeBest = new Individual(cols);
+		for (int i = 0; i < populationSize; i++)
+			individuals[i] = new Individual(cols);
+	}
+
 	private void calculateFitness() {
 		Weights w;
 		for (int i = 0; i < individuals.length; i++) {
@@ -173,14 +179,24 @@ class Genetic {
 	}
 
 	public Weights train(int generations) {
+		System.out.println("training for " + generations + " generations");
 		for (int i = 0; i < generations; i++) {
+			System.out.println("generation begin");
 			calculateFitness();
+			while(totalFitness() == 0){
+				resetIndividuals();
+				calculateFitness();
+				System.out.println("resetting");
+			}
 			printGenerationInfo(i);
 			selectAndProcreateFittest();
+			System.out.println("generation complete");
 		}
+		System.out.println("generation begin");
 		calculateFitness();
 		printGenerationInfo(generations);
 		Individual best = getBest();
+		System.out.println("generation complete");
 		return Weights.fromArray(best.chromosomes);
 	}
 }

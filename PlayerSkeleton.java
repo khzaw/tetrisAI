@@ -203,7 +203,6 @@ class Simulator
 	}
 
 	private void removeRow(int row) {
-		int newMaxHeight = 0;
 		rowsCleared++;
 
 		// For each column in row
@@ -222,15 +221,11 @@ class Simulator
 				heuristic -= weights.numHoles;
 				top[col]--;
 			}
-
-			// Find the new max height
-			if (top[col] > newMaxHeight)
-				newMaxHeight = top[col];
 		}
 
 		heuristic += weights.rowsCleared;
-		heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
-		maxHeight = newMaxHeight;
+		heuristic -= weights.maxHeight;
+		maxHeight--;
 	}
 
 }
@@ -341,5 +336,6 @@ public class PlayerSkeleton {
 		}
 
 		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+		System.exit(0);
 	}
 }
