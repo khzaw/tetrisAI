@@ -28,8 +28,8 @@ class Weights {
 		arr[wi++] = rowsCleared;
 		arr[wi++] = colHeights;
 		arr[wi++] = adjColHeightDiffs;
-    arr[wi++] = maxWellDepth;
-    arr[wi++] = totalWells;
+		arr[wi++] = maxWellDepth;
+		arr[wi++] = totalWells;
 		return arr;
 	}
 
@@ -42,8 +42,8 @@ class Weights {
 		w.rowsCleared = arr[wi++];
 		w.colHeights = arr[wi++];
 		w.adjColHeightDiffs = arr[wi++];
-    w.maxWellDepth = arr[wi++];
-    w.totalWells = arr[wi++];
+		w.maxWellDepth = arr[wi++];
+		w.totalWells = arr[wi++];
 		return w;
 	}
 
@@ -54,8 +54,8 @@ class Weights {
 		w.rowsCleared = -2;
 		w.colHeights = 0.5;
 		w.adjColHeightDiffs = 1.5;
-    w.maxWellDepth = 1.5;
-    w.totalWells = 2;
+		w.maxWellDepth = 1.5;
+		w.totalWells = 2;
 		return w;
 	}
 
@@ -66,8 +66,8 @@ class Weights {
 		w.rowsCleared = 232;
 		w.colHeights = 64;
 		w.adjColHeightDiffs = 68;
-    w.maxWellDepth = 72;
-    w.totalWells = 75;
+		w.maxWellDepth = 72;
+		w.totalWells = 75;
 		return w;
 	}
 
@@ -78,8 +78,8 @@ class Weights {
 		w.rowsCleared = 116;
 		w.colHeights = 39;
 		w.adjColHeightDiffs = 53;
-    w.maxWellDepth = 56;
-    w.totalWells = 50;
+		w.maxWellDepth = 56;
+		w.totalWells = 50;
 		return w;
 	}
 
@@ -98,7 +98,7 @@ class Weights {
 	public static double getRandom() {
 		java.util.Random r = new java.util.Random();
 		// return r.nextInt(501)-250;
-		return 1 + (5 - 1) * r.nextDouble();
+		return r.nextDouble() * 10 - 5;
 	}
 }
 
@@ -123,8 +123,8 @@ class Simulator
 	// - Holes
 	// - Cleared
 	public double heuristic;
-  public double maxWellDepth;
-  public double totalWells;
+	public double maxWellDepth;
+	public double totalWells;
 
 	public Simulator(Simulator sim) {
 		this(sim.rows, sim.cols, sim.weights);
@@ -258,6 +258,7 @@ class Simulator
 	}
 
 	private void removeRow(int row) {
+		int newMaxHeight = 0;
 		rowsCleared++;
 
 		// For each column in row
@@ -276,14 +277,18 @@ class Simulator
 				heuristic -= weights.numHoles;
 				top[col]--;
 			}
+
+			if(top[col] > newMaxHeight) {
+				newMaxHeight = top[col];
+			}
 		}
 
+		// heuristic += weights.rowsCleared;
+		// heuristic -= weights.maxHeight;
+		// maxHeight--;
 		heuristic += weights.rowsCleared;
-		heuristic -= weights.maxHeight;
-		maxHeight--;
-		// heuristic += weights.rowsCleared * 3.4;
-		// heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
-		// maxHeight = newMaxHeight;
+		heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
+		maxHeight = newMaxHeight;
 
 		// computeMaxWellDepth();
 		// totalWells();
