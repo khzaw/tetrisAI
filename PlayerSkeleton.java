@@ -62,12 +62,12 @@ class Weights {
 	}
 
 	public static Weights someWeights() {
-		Weights w = new Weights(); // [239][-2][116][39][53]
-		w.numHoles = 239;
-		w.maxHeight = -2;
-		w.rowsCleared = 116;
-		w.colHeights = 39;
-		w.adjColHeightDiffs = 53;
+		Weights w = new Weights(); // [169][23][-153][10][48]
+		w.numHoles = 169;
+		w.maxHeight = 23;
+		w.rowsCleared = -153;
+		w.colHeights = 10;
+		w.adjColHeightDiffs = 48;
 		return w;
 	}
 
@@ -315,31 +315,34 @@ public class PlayerSkeleton {
 
 	public static void main(String[] args) {
 		State s = new State();
-		TFrame tFrame = new TFrame(s);
-
 		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
 		Weights w = gen.train(25); // Number of generations
 
 		// Weights w = Weights.jacobWeights();
 		// Weights w = Weights.martinWeights();
 		// Weights w = Weights.someWeights();
-		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+		for(int i = 0; i<3; i++) {
+			s = new State();
+			TFrame tFrame = new TFrame(s);
+			PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+			p.forwardLooking = true;
 
-		while(!s.hasLost()) {
-			int move = p.pickMove(s.legalMoves(), s.getNextPiece());
-			p.gameSim.simMove(move, s.getNextPiece());
-			s.makeMove(move);
-			// s.draw();
-			tFrame.setScoreLabel(s.getRowsCleared());
-			// s.drawNext(0,0);
+			while(!s.hasLost()) {
+				int move = p.pickMove(s.legalMoves(), s.getNextPiece());
+				p.gameSim.simMove(move, s.getNextPiece());
+				s.makeMove(move);
+				// s.draw();
+				tFrame.setScoreLabel(s.getRowsCleared());
+				// s.drawNext(0,0);
 
-			// try {
-			// 	Thread.sleep(00);
-			// } catch (InterruptedException e) {
-			// 	e.printStackTrace();
-			// }
-		}
+				// try {
+				// 	Thread.sleep(00);
+				// } catch (InterruptedException e) {
+				// 	e.printStackTrace();
+				// }
+			}
 
 		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+		}
 	}
 }

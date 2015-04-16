@@ -25,10 +25,14 @@ class Individual {
 	public void mutate() {
 		double stdDev = 0.3; // std dev for random multiplication and scale factor
 		double scale = 0.5*stdDev*r.nextGaussian()+1.0;
+		double flipChance = 0.10;
 		// double scale = 1;
 		for (int i = 0; i < chromosomes.length; i++) {
 			int chr = chromosomes[i];
 			int mutated = (int) ((double) Math.round(chr * (stdDev*r.nextGaussian()+1.0) * scale) );
+			// if(r.nextDouble() < flipChance) {
+			// 	mutated = -mutated;
+			// }
 			chromosomes[i] = mutated;
 		}
 	}
