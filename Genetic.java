@@ -1,13 +1,15 @@
+import java.util.*;
+
 class Individual {
 	public int fitness, cols;
-	public int[] chromosomes;
+	public double[] chromosomes;
 	private static int MUCHANCE = 20;
-	java.util.Random r;
+	Random r;
 
 	public Individual (int cols) {
 		chromosomes = Weights.randomWeights().toArray();
 		this.cols = cols;
-		r = new java.util.Random();
+		this.r = new Random();
 	}
 
 	public static Individual procreate(Individual i1, Individual i2) {
@@ -27,8 +29,8 @@ class Individual {
 		double scale = 0.5*stdDev*r.nextGaussian()+1.0;
 		// double scale = 1;
 		for (int i = 0; i < chromosomes.length; i++) {
-			int chr = chromosomes[i];
-			int mutated = (int) ((double) Math.round(chr * (stdDev*r.nextGaussian()+1.0) * scale) );
+			double chr = chromosomes[i];
+			double mutated = chr * (stdDev*r.nextGaussian()+1.0) * scale;
 			chromosomes[i] = mutated;
 		}
 	}
@@ -36,7 +38,7 @@ class Individual {
 	public void print(int num) {
 		System.out.format("%d Fitness: %d - Chromosomes: ", num, fitness);
 		for (int i = 0; i < chromosomes.length; i++)
-			System.out.format("[%d]", chromosomes[i]);
+			System.out.format("[%f]", chromosomes[i]);
 		System.out.format("\n");
 	}
 }
@@ -128,11 +130,13 @@ class Genetic {
 		Individual[] children = new Individual[individuals.length];
 		Individual p1, p2;
 
-		java.util.List<Integer> firstRound = new java.util.ArrayList<Integer>();
-		java.util.List<Integer> secondRound = new java.util.ArrayList<Integer>();
+		List<Integer> firstRound = new ArrayList<Integer>();
+		List<Integer> secondRound = new ArrayList<Integer>();
+
 		for (int i = 0; i < individuals.length; i++)
 			firstRound.add(i);
-		java.util.Collections.shuffle(firstRound);
+
+		Collections.shuffle(firstRound);
 		for (int i = 0; i < firstRound.size(); i+=2) {
 			if (individuals[firstRound.get(i)].fitness >
 			    individuals[firstRound.get(i+1)].fitness)	
@@ -140,7 +144,8 @@ class Genetic {
 			else
 				secondRound.add(firstRound.get(i+1));
 		}
-		java.util.Collections.shuffle(secondRound);
+
+		Collections.shuffle(secondRound);
 
 		for (int i = 0; i < secondRound.size(); i+=2) {
 			p1 = individuals[secondRound.get(i)];

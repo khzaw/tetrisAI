@@ -9,16 +9,18 @@ class Moves extends State {
 }
 
 class Weights {
-	public int numHoles;
-	public int maxHeight;
-	public int rowsCleared;
-	public int colHeights;
-	public int adjColHeightDiffs;
+	public double numHoles;
+	public double maxHeight;
+	public double rowsCleared;
+	public double colHeights;
+	public double adjColHeightDiffs;
+  public double maxWellDepth;
+  public double totalWells;
 
 	public Weights() {}
 
-	public int[] toArray() {
-		int[] arr = new int[5];
+	public double[] toArray() {
+		double[] arr = new double[7];
 		int wi = 0;
 
 		arr[wi++] = numHoles;
@@ -26,10 +28,12 @@ class Weights {
 		arr[wi++] = rowsCleared;
 		arr[wi++] = colHeights;
 		arr[wi++] = adjColHeightDiffs;
+    arr[wi++] = maxWellDepth;
+    arr[wi++] = totalWells;
 		return arr;
 	}
 
-	public static Weights fromArray(int[] arr) {
+	public static Weights fromArray(double[] arr) {
 		Weights w = new Weights();
 		int wi = 0;
 
@@ -38,16 +42,20 @@ class Weights {
 		w.rowsCleared = arr[wi++];
 		w.colHeights = arr[wi++];
 		w.adjColHeightDiffs = arr[wi++];
+    w.maxWellDepth = arr[wi++];
+    w.totalWells = arr[wi++];
 		return w;
 	}
 
 	public static Weights jacobWeights() {
 		Weights w = new Weights();
-		w.numHoles = 10;
-		w.maxHeight = 3;
-		w.rowsCleared = -4;
-		w.colHeights = 1;
-		w.adjColHeightDiffs = 3;
+		w.numHoles = 5;
+		w.maxHeight = 1.5;
+		w.rowsCleared = -2;
+		w.colHeights = 0.5;
+		w.adjColHeightDiffs = 1.5;
+    w.maxWellDepth = 1.5;
+    w.totalWells = 2;
 		return w;
 	}
 
@@ -58,6 +66,8 @@ class Weights {
 		w.rowsCleared = 232;
 		w.colHeights = 64;
 		w.adjColHeightDiffs = 68;
+    w.maxWellDepth = 72;
+    w.totalWells = 75;
 		return w;
 	}
 
@@ -68,6 +78,8 @@ class Weights {
 		w.rowsCleared = 116;
 		w.colHeights = 39;
 		w.adjColHeightDiffs = 53;
+    w.maxWellDepth = 56;
+    w.totalWells = 50;
 		return w;
 	}
 
@@ -78,12 +90,15 @@ class Weights {
 		w.rowsCleared = getRandom();
 		w.colHeights = getRandom();
 		w.adjColHeightDiffs = getRandom();
+    w.maxWellDepth = getRandom();
+    w.totalWells = getRandom();
 		return w;
 	}
 
-	public static int getRandom() {
+	public static double getRandom() {
 		java.util.Random r = new java.util.Random();
-		return r.nextInt(501)-250;
+		// return r.nextInt(501)-250;
+		return 1 + (5 - 1) * r.nextDouble();
 	}
 }
 
@@ -107,7 +122,9 @@ class Simulator
 	// - Column Heights
 	// - Holes
 	// - Cleared
-	public int heuristic;
+	public double heuristic;
+  public double maxWellDepth;
+  public double totalWells;
 
 	public Simulator(Simulator sim) {
 		this(sim.rows, sim.cols, sim.weights);
@@ -132,8 +149,8 @@ class Simulator
 		maxHeight = sim.maxHeight;
 	}
 
-	public int getHeuristic() {
-		int sum = heuristic;
+	public double getHeuristic() {
+		double sum = heuristic;
 
 		for(int i = 0; i < top.length - 1; i++)
 			sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs;
@@ -161,6 +178,16 @@ class Simulator
 		return true;
 	}
 
+	private int getTotalWells() {
+		int total = 0;
+		// wells in the inner column
+		for(int col = 0; col < this.cols - 1; ++col) {
+				total += (maxHeight - top[col]);
+		}
+		// System.out.println("Total Wells : "+ total);
+		return total;
+	}
+
 	private void placePiece(int piece, int orient, int slot, int height) {
 		// For each column in the piece
 		for (int col = 0; col < pWidth[piece][orient]; col++) {
@@ -182,7 +209,34 @@ class Simulator
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
 				heuristic += weights.numHoles;
 		}
+
+		heuristic += weights.maxWellDepth * computeMaxWellDepth();
+		heuristic += weights.totalWells * getTotalWells();
+
 	}
+
+
+	private int computeMaxWellDepth() {
+		int maxWellDepth = 0;
+		for(int col = 0; col < this.cols - 1; col++) {
+		  // Adjust max well depth heuristic
+		  if(top[col] == 0) {
+		    int depth;
+		    if(col > 0 && col < this.cols - 1) {
+		      depth = Math.max(top[col + 1], top[col - 1]);
+		      if(depth > maxWellDepth) {
+		        maxWellDepth = depth;
+		      } else if(col == 0) {
+		        maxWellDepth = Math.max(maxWellDepth, top[col + 1]);
+		      } else {
+		        maxWellDepth = Math.max(maxWellDepth, top[col - 1]);
+		      }
+		    }
+		  }
+    }
+    // System.out.println("Max Welldepth :" + maxWellDepth);
+    return maxWellDepth;
+  }
 
 	private void clearRows(int piece, int orient, int height) {
 		// Check for full rows - starting at the top of the piece
@@ -200,6 +254,7 @@ class Simulator
 			if (full)
 				removeRow(row);
 		}
+
 	}
 
 	private void removeRow(int row) {
@@ -226,6 +281,14 @@ class Simulator
 		heuristic += weights.rowsCleared;
 		heuristic -= weights.maxHeight;
 		maxHeight--;
+		// heuristic += weights.rowsCleared * 3.4;
+		// heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
+		// maxHeight = newMaxHeight;
+
+		// computeMaxWellDepth();
+		// totalWells();
+		heuristic += weights.maxWellDepth * computeMaxWellDepth();
+		heuristic += weights.totalWells * getTotalWells();
 	}
 
 }
@@ -252,7 +315,7 @@ public class PlayerSkeleton {
 		// For all possible pieces
 		for (int piece = 0; piece < State.N_PIECES; piece++) {
 			int numMoves = Moves.getNumMoves(piece);
-			int pieceBestHeu = Integer.MAX_VALUE;
+			double pieceBestHeu = Double.MAX_VALUE;
 
 			// Try all possible moves for piece
 			for (int move = 0; move < numMoves; move++) {
@@ -260,7 +323,7 @@ public class PlayerSkeleton {
 				if (!sim.simMove(move, piece))
 					continue;
 
-				int heu;
+				double heu;
 				if (maxdepth != 1)
 					heu = forwardLookAvg(sim, maxdepth - 1);
 				else
