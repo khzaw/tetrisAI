@@ -317,12 +317,12 @@ public class PlayerSkeleton {
 		State s = new State();
 		TFrame tFrame = new TFrame(s);
 
-		// Genetic gen = new Genetic(100, State.ROWS-10, State.COLS);
-		// Weights w = gen.train(30); // Number of generations
+		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
+		Weights w = gen.train(25); // Number of generations
 
 		// Weights w = Weights.jacobWeights();
 		// Weights w = Weights.martinWeights();
-		Weights w = Weights.someWeights();
+		// Weights w = Weights.someWeights();
 		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
 
 		while(!s.hasLost()) {
@@ -332,11 +332,12 @@ public class PlayerSkeleton {
 			// s.draw();
 			tFrame.setScoreLabel(s.getRowsCleared());
 			// s.drawNext(0,0);
-			try {
-				Thread.sleep(00);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+
+			// try {
+			// 	Thread.sleep(00);
+			// } catch (InterruptedException e) {
+			// 	e.printStackTrace();
+			// }
 		}
 
 		System.out.println("You have completed "+s.getRowsCleared()+" rows.");

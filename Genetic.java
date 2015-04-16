@@ -23,9 +23,9 @@ class Individual {
 	}
 
 	public void mutate() {
-		double stdDev = 0.1; // std dev for random multiplication and scale factor
-		// double scale = 2*stdDev*r.nextGaussian()+1.0;
-		double scale = 1;
+		double stdDev = 0.3; // std dev for random multiplication and scale factor
+		double scale = 0.5*stdDev*r.nextGaussian()+1.0;
+		// double scale = 1;
 		for (int i = 0; i < chromosomes.length; i++) {
 			int chr = chromosomes[i];
 			int mutated = (int) ((double) Math.round(chr * (stdDev*r.nextGaussian()+1.0) * scale) );
@@ -62,12 +62,13 @@ class Genetic {
 		Weights w;
 		for (int i = 0; i < individuals.length; i++) {
 			w = Weights.fromArray(individuals[i].chromosomes);
-			PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
+			// PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
 			// individuals[i].fitness = p.playAndReturnScore();
 
-			int noRounds = 8; // How many rounds to take the average of
+			int noRounds = 5; // How many rounds to take the average of
 			int score = 0;
 			for(int j = 0; j < noRounds; j++) {
+				PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
 				score += p.playAndReturnScore();
 			}
 			individuals[i].fitness = score/noRounds;
