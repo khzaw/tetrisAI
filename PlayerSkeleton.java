@@ -94,18 +94,18 @@ class Weights {
 		return w;
 	}
 
-	// public static Weights someWeights() {
-	// 	Weights w = new Weights(); // [10978][4024][-432][2][1680][11][925][5396]
-	// 	w.numHoles = 10978;
-	// 	w.maxHeight = 4024;
-	// 	w.rowsCleared = -432;
-	// 	w.colHeights = 2;
-	// 	w.adjColHeightDiffs = 1680;
-	// 	w.rowTrans = 11;
-	// 	w.colTrans = 925;
-	// 	w.wellSums = 5396;
-	// 	return w;
-	// }
+	public static Weights fiftyKWeights() {
+		Weights w = new Weights(); // [10978][4024][-432][2][1680][11][925][5396]
+		w.numHoles = 10978/10;
+		w.maxHeight = 4024/10;
+		w.rowsCleared = -432/10;
+		w.colHeights = 2/10;
+		w.adjColHeightDiffs = 1680/10;
+		w.rowTrans = 11/10;
+		w.colTrans = 925/10;
+		w.wellSums = 5396/10;
+		return w;
+	}
 
 	public static Weights randomWeights() {
 		Weights w = new Weights();
@@ -417,7 +417,8 @@ public class PlayerSkeleton {
 
 		// Weights w = Weights.jacobWeights();
 		// Weights w = Weights.martinWeights();
-		Weights w = Weights.someWeights();
+		// Weights w = Weights.someWeights();
+		Weights w = Weights.fiftyKWeights();
 		for(int i = 0; i<20; i++) {
 			s = new State();
 			TFrame tFrame = new TFrame(s);
