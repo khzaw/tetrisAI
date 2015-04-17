@@ -184,8 +184,8 @@ class Simulator
 		int a, b, c, d;
 
 		// coltrans
-		for(int row = 0; row < rows-2; row++) {
-			for(int col = 0; col < cols; col++) {
+		for(int col = 0; col < cols; col++) {
+			for(int row = 0; row < top[col]; row++) {
 				a=field[row][col];
 				b=field[row+1][col];
 
@@ -197,22 +197,8 @@ class Simulator
 			}
 		}
 
-		// rowtrans
-		for(int row = 0; row < rows-1; row++) {
-			for(int col = 0; col < cols-1; col++) {
-				a=field[row][col];
-				b=field[row][col+1];
-
-				if( a!=0 && b==0 ) {
-					n_rowtrans++;
-				}else if(a==0 && b != 0) {
-					n_rowtrans++;
-				}
-			}
-		}
-
-		// wells (inner)
-		for(int row = 0; row < rows-1; row++) {
+		// rowtrans and wells (inner)
+		for(int row = 0; row < maxHeight; row++) {
 			for(int col = 1; col < cols-1; col++) {
 				a=field[row][col-1];
 				b=field[row][col];
@@ -221,11 +207,15 @@ class Simulator
 				if( a!=0 && b==0 && c!=0 ) {
 					n_wells++;
 				}
-			}
-		}
 
-		// wells (edges)
-		for(int row = 0; row < rows-1; row++) {
+				if( b!=0 && c==0 ) {
+					n_rowtrans++;
+				}else if(b==0 && c != 0) {
+					n_rowtrans++;
+				}
+			}
+
+			// edges
 			a=field[row][0];
 			b=field[row][1];
 
