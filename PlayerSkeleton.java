@@ -94,6 +94,19 @@ class Weights {
 		return w;
 	}
 
+	// public static Weights someWeights() {
+	// 	Weights w = new Weights(); // [10978][4024][-432][2][1680][11][925][5396]
+	// 	w.numHoles = 10978;
+	// 	w.maxHeight = 4024;
+	// 	w.rowsCleared = -432;
+	// 	w.colHeights = 2;
+	// 	w.adjColHeightDiffs = 1680;
+	// 	w.rowTrans = 11;
+	// 	w.colTrans = 925;
+	// 	w.wellSums = 5396;
+	// 	return w;
+	// }
+
 	public static Weights randomWeights() {
 		Weights w = new Weights();
 		w.numHoles = getRandom();
@@ -171,8 +184,8 @@ class Simulator
 		int a, b, c, d;
 
 		// coltrans
-		for(int col = 0; col < cols; col++) {
-			for(int row = 0; row < rows-2; row++) {
+		for(int row = 0; row < rows-2; row++) {
+			for(int col = 0; col < cols; col++) {
 				a=field[row][col];
 				b=field[row+1][col];
 
@@ -185,8 +198,8 @@ class Simulator
 		}
 
 		// rowtrans
-		for(int col = 0; col < cols-1; col++) {
-			for(int row = 0; row < rows-1; row++) {
+		for(int row = 0; row < rows-1; row++) {
+			for(int col = 0; col < cols-1; col++) {
 				a=field[row][col];
 				b=field[row][col+1];
 
@@ -199,8 +212,8 @@ class Simulator
 		}
 
 		// wells (inner)
-		for(int col = 1; col < cols-1; col++) {
-			for(int row = 0; row < rows-1; row++) {
+		for(int row = 0; row < rows-1; row++) {
+			for(int col = 1; col < cols-1; col++) {
 				a=field[row][col-1];
 				b=field[row][col];
 				c=field[row][col+1];
@@ -409,12 +422,12 @@ public class PlayerSkeleton {
 
 	public static void main(String[] args) {
 		State s = new State();
-		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
-		Weights w = gen.train(20); // Number of generations
+		// Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
+		// Weights w = gen.train(20); // Number of generations
 
 		// Weights w = Weights.jacobWeights();
 		// Weights w = Weights.martinWeights();
-		// Weights w = Weights.someWeights();
+		Weights w = Weights.someWeights();
 		for(int i = 0; i<20; i++) {
 			s = new State();
 			TFrame tFrame = new TFrame(s);
