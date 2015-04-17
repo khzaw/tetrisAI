@@ -1,7 +1,7 @@
 all: compile run
 
-PlayerSkeleton.class: PlayerSkeleton.java SquaredError.java
-	javac -g PlayerSkeleton.java SquaredError.java
+PlayerSkeleton.class: PlayerSkeleton.java PSO.java
+	javac -g PlayerSkeleton.java PSO.java
 
 compile: PlayerSkeleton.class
 

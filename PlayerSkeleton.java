@@ -11,46 +11,33 @@ class Moves extends State {
 }
 
 class Features {
+	public int landingHeight;
+	public int rowTrans;
+	public int colTrans;
 	public int numHoles;
-	public int maxHeight;
+	public int wellSums;
 	public int rowsCleared;
-	public int[] colHeights;
-	public int[] adjColHeightDiffs;
 
-	private int cols;
-
-	private static int numFeatures(int cols) {
-		return 3 + cols + cols - 1;
-	}
-
-	public Features(int cols) {
-		colHeights = new int[cols];
-		adjColHeightDiffs = new int[cols - 1];
-		this.cols = cols;
-	}
+	public Features() {}
 
 	public Features(Features feat) {
-		this(feat.cols);
-		System.arraycopy(feat.colHeights, 0, colHeights, 0, colHeights.length);
-		System.arraycopy(feat.adjColHeightDiffs, 0,
-		                 adjColHeightDiffs, 0, adjColHeightDiffs.length);
 		rowsCleared = feat.rowsCleared;
-		maxHeight = feat.maxHeight;
+		landingHeight = feat.landingHeight;
 		numHoles = feat.numHoles;
+		rowTrans = feat.rowTrans;
+		colTrans = feat.colTrans;
+		wellSums = feat.wellSums;
 	}
 
 	public int[] toArray() {
-		int[] arr = new int[numFeatures(cols) + 1];
-		int wi = 1;
-
-		arr[0] = 1; // for multiplying with the "offset weight";
+		int[] arr = new int[6];
+		int wi = 0;
+		arr[wi++] = landingHeight;
+		arr[wi++] = rowTrans;
+		arr[wi++] = colTrans;
 		arr[wi++] = numHoles;
-		arr[wi++] = maxHeight;
+		arr[wi++] = wellSums;
 		arr[wi++] = rowsCleared;
-		for (int i = 0; i < colHeights.length; i++)
-			arr[wi++] = colHeights[i];
-		for (int i = 0; i < adjColHeightDiffs.length; i++)
-			arr[wi++] = adjColHeightDiffs[i];
 		return arr;
 	}
 
@@ -63,24 +50,35 @@ class Features {
 	}
 
 	public static double[] randomWeights(int cols) {
-		double[] w = new double[numFeatures(cols) + 1];
+		double[] w = new double[6];
 		for (int i = 0; i < w.length; i++)
-			w[i] = Math.random()*10-5; // -1 to 1
+			w[i] = Math.random()*2-1; // -1 to 1
 		return w;
 	}
 
-	public static double[] jacobWeights(int cols) {
-		double[] w = new double[numFeatures(cols) + 1];
-		int wi = 1;
+	public static double[] goodRunWeights() {
+		double[] w = new double[6];
+		int wi = 0;
 
-		w[0] = 0;
-		w[wi++] = 5;
-		w[wi++] = 1.5;
-		w[wi++] = -2;
-		for (int i = 0; i < cols; i++)
-			w[wi++] = 0.5;
-		for (int i = 0; i < cols - 1; i++)
-			w[wi++] = 1.5;
+		w[wi++] = 1.0678060399788223;
+		w[wi++] = 2.3969810308089756;
+		w[wi++] = 3.024616883841221;
+		w[wi++] = 2.736472855876444;
+		w[wi++] = 0.21575492256716255;
+		w[wi++] = -2.6400552048375703;
+		return w;
+	}
+
+	public static double[] jacobWeights() {
+		double[] w = new double[6];
+		int wi = 0;
+
+		w[wi++] = 4.500158825082766;
+		w[wi++] = 3.2178882868487753;
+		w[wi++] = 9.348695305445199;
+		w[wi++] = 7.899265427351652;
+		w[wi++] = 3.3855972247263626;
+		w[wi++] = -3.4181268101392694;
 		return w;
 	}
 }
@@ -110,7 +108,7 @@ class Simulator
 		this.cols = cols;
 		this.field = new int[rows][cols];
 		this.top = new int[cols];
-		this.feat = new Features(cols);
+		this.feat = new Features();
 	}
 
 	public int getScore() {
@@ -125,7 +123,7 @@ class Simulator
 		turn = 0;
 		score = 0;
 		lost = false;
-		this.feat = new Features(cols);
+		this.feat = new Features();
 	}
 
 	public void revertTo(Simulator sim) {
@@ -136,12 +134,43 @@ class Simulator
 		turn = sim.turn;
 		score = sim.score;
 		lost = sim.lost;
-		feat = new Features(sim.feat);
+		feat = new Features();
 	}
 
 	public Features getFeatures() {
-		for(int i = 0; i < top.length - 1; i++)
-			feat.adjColHeightDiffs[i] = Math.abs(top[i] - top[i+1]);
+		feat.colTrans = 0;
+		feat.rowTrans = 0;
+		feat.wellSums = 0;
+		for(int row = 0; row < field.length; row++) {
+			boolean last = field[row][0] == 0;
+			for (int col = 0; col < field[row].length; col++)
+				if ((field[row][col] == 0) != last) {
+					last = !last;
+					feat.rowTrans++;
+
+					if (field[row][col] == 0) {
+						if (row == 0) {
+							if (field[row + 1][col] != 0)
+								feat.wellSums++;
+						}
+						else if (row == field.length) {
+							if (field[row - 1][col] != 0)
+								feat.wellSums++;
+						}
+						else if (field[row-1][col] != 0 && field[row+1][col] != 0)
+							feat.wellSums++;
+					}
+				}
+		}
+
+		for(int col = 0; col < field[0].length; col++) {
+			boolean last = field[0][col] == 0;
+			for (int row = 0; row < top[col]; row++)
+				if ((field[row][col] == 0) != last) {
+					last = !last;
+					feat.colTrans++;
+				}
+		}
 
 		return new Features(feat);
 	}
@@ -160,6 +189,8 @@ class Simulator
 		// for each column beyond the first in the piece
 		for(int col = 1; col < pWidth[piece][orient]; col++)
 			height = Math.max(height, top[slot + col] - pBottom[piece][orient][col]);
+
+		feat.landingHeight = height;
 
 		// Check if game ended
 		if(height + pHeight[piece][orient] >= this.rows) {
@@ -181,10 +212,6 @@ class Simulator
 
 			// Adjust top and max height heuristic
 			top[slot + col] = colTop;
-			feat.colHeights[slot + col] = colTop;
-
-			if (colTop > feat.maxHeight)
-				feat.maxHeight = colTop;
 
 			// For each field in piece-column - bottom to top
 			for (int row = colBottom; row < colTop; row++)
@@ -215,7 +242,6 @@ class Simulator
 	}
 
 	private void removeRow(int row) {
-		int newMaxHeight = 0;
 		feat.rowsCleared++;
 		score++;
 
@@ -227,27 +253,20 @@ class Simulator
 
 			// Lower the top
 			top[col]--;
-			feat.colHeights[col]--;
 
 			// If a hole opened up, andjust top
 			while (top[col] > 0 && field[top[col] - 1][col] == 0) {
 				top[col]--;
-				feat.colHeights[col]--;
 				feat.numHoles--;
 			}
-
-			// Find the new max height
-			if (top[col] > newMaxHeight)
-				newMaxHeight = top[col];
 		}
-
-		feat.maxHeight = newMaxHeight;
 	}
 }
 
 
 public class PlayerSkeleton {
 	private Simulator gameSim;
+	public boolean forwardLooking = false;
 	private double[] w;
 
 	public PlayerSkeleton(int rows, int cols, double[] w) {
@@ -255,15 +274,7 @@ public class PlayerSkeleton {
 		gameSim = new Simulator(rows, cols);
 	}
 
-	public int playAndGatherMoveInfo(List<MoveInfo> gameMoves) {
-		gameSim.reset();
-		while (!gameSim.hasLost()) {
-			int piece = randomPiece();
-			int move = pickMove(Moves.getLegalMoves(piece), piece);
-			gameMoves.add(new MoveInfo(gameSim.getFeatures()));
-		}
-		return gameSim.getScore();
-	}
+	
 
 	public int playAndReturnScore() {
 		gameSim.reset();
@@ -317,7 +328,11 @@ public class PlayerSkeleton {
 			if (!sim.simMove(move, piece))
 				continue;
 
-			double heu = sim.getFeatures().heu(w); //forwardLookAvg(sim, 1);
+			double heu;
+			if (forwardLooking)
+				heu = forwardLookAvg(sim, 1);
+			else
+				heu = sim.getFeatures().heu(w);
 			if (heu < bestHeuristic) {
 				bestMove = move;
 				bestHeuristic = heu;
@@ -336,18 +351,19 @@ public class PlayerSkeleton {
 		State s = new State();
 		TFrame tFrame = new TFrame(s);
 
-		SquaredError trainer = new SquaredError(State.ROWS, State.COLS);
-		double[] w = trainer.train(6, 40);
-		//double[] w = Features.jacobWeights(State.COLS);
+		PSOTrainer trainer = new PSOTrainer(4000);
+		double[] w = trainer.train(20);
+//		double[] w = Features.goodRunWeights();
 
 		PlayerSkeleton bob = new PlayerSkeleton(State.ROWS, State.COLS, w);
+		bob.forwardLooking = true;
 
 		while(!s.hasLost()) {
 			int move = bob.pickMove(s.legalMoves(), s.getNextPiece());
 			s.makeMove(move);
-			s.draw();
+			//s.draw();
 			tFrame.setScoreLabel(s.getRowsCleared());
-			s.drawNext(0,0);
+			//s.drawNext(0,0);
 			//try {
 			//	Thread.sleep(100);
 			//} catch (InterruptedException e) {
