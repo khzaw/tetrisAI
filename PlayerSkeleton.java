@@ -124,6 +124,7 @@ class Simulator
 	public int[] top = new int[State.COLS];
 	public int turn, maxHeight, rowsCleared, rows, cols;
 	public Weights weights;
+	public int rowsClearedPerMove = 0;
 
 	// For quick heuristics, simMove keeps this field updated for:
 	// - Max height
@@ -226,6 +227,7 @@ class Simulator
 	}
 
 	public boolean simMove(int move, int piece) {
+		rowsClearedPerMove = 0;
 		int orient = legalMoves[piece][move][State.ORIENT];
 		int slot = legalMoves[piece][move][State.SLOT];
 		turn++;
@@ -282,7 +284,6 @@ class Simulator
 
 	}
 
-
 	private int computeMaxWellDepth() {
 		int maxWellDepth = 0;
 		for(int col = 0; col < this.cols - 1; col++) {
@@ -327,6 +328,7 @@ class Simulator
 	private void removeRow(int row) {
 		int newMaxHeight = 0;
 		rowsCleared++;
+		rowsClearedPerMove++;
 
 		// For each column in row
 		for (int col = 0; col < this.cols; col++) {
@@ -394,7 +396,7 @@ public class PlayerSkeleton {
 				if (!sim.simMove(move, piece))
 					continue;
 
-				double heu;
+				double heu = -sim.rowsClearedPerMove;
 				if (maxdepth != 1)
 					heu = forwardLookAvg(sim, maxdepth - 1);
 				else
@@ -419,10 +421,11 @@ public class PlayerSkeleton {
 
 		for (int move = 0; move < legalMoves.length; move++) {
 			sim.revertTo(gameSim);
-			if (!sim.simMove(move, piece))
+			if (!sim.simMove(move, piece)) {
 				continue;
+			}
 
-			double heu = forwardLookAvg(sim, 1);
+			double heu = forwardLookAvg(sim, 1) - sim.rowsClearedPerMove;
 			// double heu = sim.getHeuristic();
 			if (heu < bestHeuristic) {
 				bestMove = move;
