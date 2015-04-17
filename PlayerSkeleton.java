@@ -14,11 +14,14 @@ class Weights {
 	public int rowsCleared;
 	public int colHeights;
 	public int adjColHeightDiffs;
+	public int rowTrans;
+	public int colTrans;
+	public int wellSums;
 
 	public Weights() {}
 
 	public int[] toArray() {
-		int[] arr = new int[5];
+		int[] arr = new int[8];
 		int wi = 0;
 
 		arr[wi++] = numHoles;
@@ -26,6 +29,9 @@ class Weights {
 		arr[wi++] = rowsCleared;
 		arr[wi++] = colHeights;
 		arr[wi++] = adjColHeightDiffs;
+		arr[wi++] = rowTrans;
+		arr[wi++] = colTrans;
+		arr[wi++] = wellSums;
 		return arr;
 	}
 
@@ -38,6 +44,10 @@ class Weights {
 		w.rowsCleared = arr[wi++];
 		w.colHeights = arr[wi++];
 		w.adjColHeightDiffs = arr[wi++];
+		w.rowTrans = arr[wi++];
+		w.colTrans = arr[wi++];
+		w.wellSums = arr[wi++];
+
 		return w;
 	}
 
@@ -61,13 +71,26 @@ class Weights {
 		return w;
 	}
 
+	// public static Weights someWeights() {
+	// 	Weights w = new Weights(); // [169][23][-153][10][48]
+	// 	w.numHoles = 169;
+	// 	w.maxHeight = 23;
+	// 	w.rowsCleared = -153;
+	// 	w.colHeights = 10;
+	// 	w.adjColHeightDiffs = 48;
+	// 	return w;
+	// }
+
 	public static Weights someWeights() {
-		Weights w = new Weights(); // [169][23][-153][10][48]
-		w.numHoles = 169;
-		w.maxHeight = 23;
-		w.rowsCleared = -153;
-		w.colHeights = 10;
-		w.adjColHeightDiffs = 48;
+		Weights w = new Weights(); // [708][-74][136][132][27][404][425][122]
+		w.numHoles = 708;
+		w.maxHeight = -74;
+		w.rowsCleared = 136;
+		w.colHeights = 132;
+		w.adjColHeightDiffs = 27;
+		w.rowTrans = 404;
+		w.colTrans = 425;
+		w.wellSums = 122;
 		return w;
 	}
 
@@ -78,12 +101,15 @@ class Weights {
 		w.rowsCleared = getRandom();
 		w.colHeights = getRandom();
 		w.adjColHeightDiffs = getRandom();
+		w.rowTrans = getRandom();
+		w.colTrans = getRandom();
+		w.wellSums = getRandom();
 		return w;
 	}
 
 	public static int getRandom() {
 		java.util.Random r = new java.util.Random();
-		return r.nextInt(501)-250;
+		return r.nextInt(5001)-2500;
 	}
 }
 
@@ -137,6 +163,74 @@ class Simulator
 
 		for(int i = 0; i < top.length - 1; i++)
 			sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs;
+
+
+		int n_coltrans = 0;
+		int n_rowtrans = 0;
+		int n_wells = 0;
+		int a, b, c, d;
+
+		// coltrans
+		for(int col = 0; col < cols; col++) {
+			for(int row = 0; row < rows-2; row++) {
+				a=field[row][col];
+				b=field[row+1][col];
+
+				if( a!=0 && b==0 ) {
+					n_coltrans++;
+				}else if(a==0 && b != 0) {
+					n_coltrans++;
+				}
+			}
+		}
+
+		// rowtrans
+		for(int col = 0; col < cols-1; col++) {
+			for(int row = 0; row < rows-1; row++) {
+				a=field[row][col];
+				b=field[row][col+1];
+
+				if( a!=0 && b==0 ) {
+					n_rowtrans++;
+				}else if(a==0 && b != 0) {
+					n_rowtrans++;
+				}
+			}
+		}
+
+		// wells (inner)
+		for(int col = 1; col < cols-1; col++) {
+			for(int row = 0; row < rows-1; row++) {
+				a=field[row][col-1];
+				b=field[row][col];
+				c=field[row][col+1];
+
+				if( a!=0 && b==0 && c!=0 ) {
+					n_wells++;
+				}
+			}
+		}
+
+		// wells (edges)
+		for(int row = 0; row < rows-1; row++) {
+			a=field[row][0];
+			b=field[row][1];
+
+			c=field[row][cols-2];
+			d=field[row][cols-1];
+
+			if( a==0 && b!=0 ) {
+				n_wells++;
+			}
+
+			if( c!=0 && d==0 ) {
+				n_wells++;
+			}
+		}
+
+		sum += n_coltrans * weights.colTrans;
+		sum += n_rowtrans * weights.rowTrans;
+		sum += n_wells * weights.wellSums;
 
 		return sum;
 	}
@@ -316,16 +410,15 @@ public class PlayerSkeleton {
 	public static void main(String[] args) {
 		State s = new State();
 		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
-		Weights w = gen.train(25); // Number of generations
+		Weights w = gen.train(20); // Number of generations
 
 		// Weights w = Weights.jacobWeights();
 		// Weights w = Weights.martinWeights();
 		// Weights w = Weights.someWeights();
-		for(int i = 0; i<3; i++) {
+		for(int i = 0; i<20; i++) {
 			s = new State();
 			TFrame tFrame = new TFrame(s);
 			PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
-			p.forwardLooking = true;
 
 			while(!s.hasLost()) {
 				int move = p.pickMove(s.legalMoves(), s.getNextPiece());
