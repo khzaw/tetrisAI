@@ -14,13 +14,15 @@ class Weights {
 	public double rowsCleared;
 	public double colHeights;
 	public double adjColHeightDiffs;
+	public double rowTrans;
+	public double colTrans;
   public double maxWellDepth;
   public double totalWells;
 
 	public Weights() {}
 
 	public double[] toArray() {
-		double[] arr = new double[7];
+		double[] arr = new double[9];
 		int wi = 0;
 
 		arr[wi++] = numHoles;
@@ -28,6 +30,8 @@ class Weights {
 		arr[wi++] = rowsCleared;
 		arr[wi++] = colHeights;
 		arr[wi++] = adjColHeightDiffs;
+		arr[wi++] = rowTrans;
+		arr[wi++] = colTrans;
 		arr[wi++] = maxWellDepth;
 		arr[wi++] = totalWells;
 		return arr;
@@ -42,6 +46,8 @@ class Weights {
 		w.rowsCleared = arr[wi++];
 		w.colHeights = arr[wi++];
 		w.adjColHeightDiffs = arr[wi++];
+		w.rowTrans = arr[wi++];
+		w.colTrans = arr[wi++];
 		w.maxWellDepth = arr[wi++];
 		w.totalWells = arr[wi++];
 		return w;
@@ -90,6 +96,8 @@ class Weights {
 		w.rowsCleared = getRandom();
 		w.colHeights = getRandom();
 		w.adjColHeightDiffs = getRandom();
+		w.rowTrans = getRandom();
+		w.colTrans = getRandom();
     w.maxWellDepth = getRandom();
     w.totalWells = getRandom();
 		return w;
@@ -154,6 +162,65 @@ class Simulator
 
 		for(int i = 0; i < top.length - 1; i++)
 			sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs;
+
+		int columnTransitions = 0;
+		int rowTransitions = 0;
+		int wells;
+		int a, b, c, d;
+
+		// column Transitions
+		for(int col = 0; col < cols; col++) {
+			for(int row = 0; row < top[col]; row++) {
+				a = field[row][col];
+				b = field[row+1][col];
+
+				if( a!=0 && b==0 ) {
+					columnTransitions++;
+				} else if(a==0 && b != 0) {
+					columnTransitions++;
+				}
+			}
+		}
+
+		// row transitions and wells (inner)
+		for(int row = 0; row < maxHeight; row++) {
+			for(int col = 1; col < cols-1; col++) {
+				a=field[row][col-1];
+				b=field[row][col];
+				c=field[row][col+1];
+
+				if( a!=0 && b==0 && c!=0 ) {
+					wells++;
+				}
+
+				if( b!=0 && c==0 ) {
+					rowTransitions++;
+				} else if(b==0 && c != 0) {
+					rowTransitions++;
+				}
+			}
+
+			// edges;
+			a = field[row][0];
+			b = field[row][1];
+
+			c = field[row][cols - 2];
+			d = field[row][cols - 1];
+
+			if(a == 0 && b != 0) {
+				wells++;
+			}
+
+			if(c != 0 && d == 0) {
+				wells++;
+			}
+
+		}
+
+		sum += columnTransitions * weights.colTrans;
+		sum += rowTransitions * weights.rowTrans;
+		sum += wells * weights.totalWells
+
 
 		return sum;
 	}
@@ -293,7 +360,6 @@ class Simulator
 		// computeMaxWellDepth();
 		// totalWells();
 		heuristic += weights.maxWellDepth * computeMaxWellDepth();
-		heuristic += weights.totalWells * getTotalWells();
 	}
 
 }
