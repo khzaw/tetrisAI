@@ -165,7 +165,7 @@ class Simulator
 
 		int columnTransitions = 0;
 		int rowTransitions = 0;
-		int wells;
+		int wells = 0;
 		int a, b, c, d;
 
 		// column Transitions
@@ -219,7 +219,7 @@ class Simulator
 
 		sum += columnTransitions * weights.colTrans;
 		sum += rowTransitions * weights.rowTrans;
-		sum += wells * weights.totalWells
+		sum += wells * weights.totalWells;
 
 
 		return sum;
