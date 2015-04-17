@@ -1,5 +1,6 @@
 import java.util.*;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 class Individual {
 	public int fitness, cols;
 	public double[] chromosomes;
@@ -67,20 +68,31 @@ class Genetic {
 	}
 
 	private void calculateFitness() {
-		Weights w;
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
 		for (int i = 0; i < individuals.length; i++) {
-			w = Weights.fromArray(individuals[i].chromosomes);
+			final Weights w = Weights.fromArray(individuals[i].chromosomes);
 			// PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
 			// individuals[i].fitness = p.playAndReturnScore();
 
-			int noRounds = 5; // How many rounds to take the average of
-			int score = 0;
+			int noRounds = 10; // How many rounds to take the average of
+			final Individual in = individuals[i];
+			in.fitness = 0;
 			for(int j = 0; j < noRounds; j++) {
-				PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
-				score += p.playAndReturnScore();
+				Runnable aRunnable = new Runnable(){
+		            @Override
+		            public void run() {
+						PlayerSkeleton p = new PlayerSkeleton(w, rows, cols);
+						in.fitness += p.playAndReturnScore();
+					}
+				};
+				executor.execute(aRunnable);
 			}
-			individuals[i].fitness = score/noRounds;
+			individuals[i].fitness = individuals[i].fitness/noRounds;
 		}
+		executor.shutdown();
+        while (!executor.isTerminated()) {}
+        System.out.println("Finished all threads");
 	}
 
 	private int totalFitness() {

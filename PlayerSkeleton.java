@@ -1,3 +1,4 @@
+import java.util.Arrays;
 class Moves extends State {
 	public static int[][][] allMoves = legalMoves;
 	public static int getNumMoves(int piece) {
@@ -446,33 +447,38 @@ public class PlayerSkeleton {
 	}
 
 	public static void main(String[] args) {
+		//TFrame tFrame = new TFrame(s);
 		State s = new State();
-		TFrame tFrame = new TFrame(s);
-
-		Genetic gen = new Genetic(10, State.ROWS-10, State.COLS);
+		Genetic gen = new Genetic(100, State.ROWS-10, State.COLS);
 		Weights w = gen.train(25); // Number of generations
 
 		// Weights w = Weights.jacobWeights();
 		// Weights w = Weights.martinWeights();
-		// Weights w = Weights.someWeights();
-		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+		//Weights w = Weights.someWeights();
 
-		while(!s.hasLost()) {
-			int move = p.pickMove(s.legalMoves(), s.getNextPiece());
-			p.gameSim.simMove(move, s.getNextPiece());
-			s.makeMove(move);
-			// s.draw();
-			tFrame.setScoreLabel(s.getRowsCleared());
-			// s.drawNext(0,0);
+		for(int game = 0; game < 10; game++) {
 
-			// try {
-			// 	Thread.sleep(00);
-			// } catch (InterruptedException e) {
-			// 	e.printStackTrace();
+			s = new State();
+			PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+			// while(!s.hasLost()) {
+			// 	int move = p.pickMove(s.legalMoves(), s.getNextPiece());
+			// 	p.gameSim.simMove(move, s.getNextPiece());
+			// 	s.makeMove(move);
+			// 	// s.draw();
+			// 	//tFrame.setScoreLabel(s.getRowsCleared());
+			// 	// s.drawNext(0,0);
+
+			// 	// try {
+			// 	// 	Thread.sleep(00);
+			// 	// } catch (InterruptedException e) {
+			// 	// 	e.printStackTrace();
+			// 	// }
 			// }
+
+			System.out.println("You have completed "+p.playAndReturnScore()+" rows.");
+
 		}
 
-		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
 		System.exit(0);
 	}
 }
