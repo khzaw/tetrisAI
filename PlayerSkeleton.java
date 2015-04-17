@@ -281,7 +281,7 @@ class Simulator
 		}
 
 		heuristic += weights.maxWellDepth * computeMaxWellDepth();
-		heuristic += weights.totalWells * getTotalWells();
+		// heuristic += weights.totalWells * getTotalWells();
 
 	}
 
@@ -356,7 +356,7 @@ class Simulator
 		// heuristic += weights.rowsCleared;
 		// heuristic -= weights.maxHeight;
 		// maxHeight--;
-		heuristic += weights.rowsCleared;
+		// heuristic += weights.rowsCleared;
 		heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
 		maxHeight = newMaxHeight;
 
@@ -399,9 +399,9 @@ public class PlayerSkeleton {
 
 				double heu = -sim.rowsClearedPerMove;
 				if (maxdepth != 1)
-					heu = forwardLookAvg(sim, maxdepth - 1);
+					heu += forwardLookAvg(sim, maxdepth - 1);
 				else
-					heu = sim.getHeuristic();
+					heu += sim.getHeuristic();
 
 				if (heu < pieceBestHeu)
 					pieceBestHeu = heu;
