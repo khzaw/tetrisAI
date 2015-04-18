@@ -1,22 +1,34 @@
 % 2-column and smaller margins allows more text in 4 pages.
-\documentclass[12pt,twocolumn]{article}
+\documentclass[12pt, twocolumn]{article}
+\setlength{\columnsep}{0.65cm}
 \usepackage[utf8]{inputenc}
 \usepackage{titling} \setlength{\droptitle}{-1in}
 \usepackage{fullpage}
 % Usefull for inserting figures and algs.
 \usepackage{graphicx}
 \usepackage{epstopdf}
-\usepackage{subcaption}
+\usepackage[font=small]{subcaption}
+\usepackage[font=small]{caption}
+\usepackage{booktabs}
+\usepackage{enumitem}
 \usepackage{algorithm}
+\usepackage{amsmath}
 \usepackage{algpseudocode}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{endnotes}
+\pgfplotsset{compat=1.10}
 % Clickable references
 \usepackage{hyperref}
+\usepackage[margin=1.9cm, top=2.8cm, bottom=2.8cm]{geometry}
 
-\title{Learning to Play Tetris with Big Data!}
+\definecolor{tufte1}{rgb}{0.6,0.6,0.45}
+
+\title{Learning to Play Tetris with Big Data! (Grp. 11)}
 \author{
 	Rohit Kothur \\ A0134822L \and
 	Martin Bohman \\ A0135153N \and
-	Kaung Htet \\ A0105860L \and \quad
+	Kaung Htet \\ A0105860L \and
 	Sundeep Gottipati \\ A0135273J \and
 	Jacob Grevald \\ A0134963Y}
 \date{April 18, 2015}
@@ -24,14 +36,302 @@
 \begin{document}
 \maketitle
 
-\section*{Introduction}
+Tetris is a single-player video game originally developed by computer engineer
+Alexey Pajitnov. The game is known to be NP-complete even when the input string
+of pieces is known in advance; however, attempts at creating automatic game
+players have been highly successful in the past, with the best agents able to
+clear millions of lines. In our project, we play a simplified version of the
+game containing no gravity and the inability to "maneuver" the piece once it
+has been released.
 
-Tetris is a single-player video game originally developed by computer engineer Alexey Pajitnov. The game is known to be NP-complete even when the input string of pieces is known in advance; however, attempts at creating automatic game players have been highly successful in the past, with the best agents able to clear millions of lines. In our project, we solve a simplified version of the game containing no gravity and the inability to "maneuver" the piece once it has been released.
+\section*{Strategy}
+We use a basic utility based agent as given by Equation~\ref{eq:strat} where
+$i$ and $y$ are the board state and current piece respectively and $a$ is the
+action, i.e. the position and orientation chosen for the piece. The function $f$
+calculates the next board state, and the reward function $r$ is the number of
+rows cleared for an action. Note that we use a negative heuristic
+function $\widetilde{V}$, and that our $r$ is weighted by $\omega_r$.
+\begin{align}
+	\mu(i,y) = \underset{a}{\operatorname{argmax}}
+		~ &\omega_{r} r(i,y,a) \notag \\
+		&- \widetilde{V}(f(i,y,a)).
+	\label{eq:strat}
+\end{align}
 
-\section*{Our strategy}
+We employ depth-first lookahead to improve performance, but the time
+penalty quickly becomes too high to be practical, so we are limited to only looking
+forward one ply. Since we do not know the next piece, we try each
+possible piece and average their best heuristic values. Averaging seems to be
+better than minimizing the maximum as in min-max, likely because we are
+playing against chance rather than a perfect opponent.
+
+\begin{figure*}
+\centering
+
+\begin{subfigure}[b]{0.44\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.8]
+	\begin{axis}[
+		axis line style={opacity=0},
+		major tick style={draw=none},
+		ymajorgrids,
+		xlabel=Generations,
+		ylabel=Average score,
+        ymin=0,
+		ymax=5000
+	]
+	\addplot[very thick, color=tufte1, mark=+]
+		coordinates {(1,140) (2,1225) (3,1066) (4,638) (5,710)
+			(6,827)	(7,2041) (8,1088) (9,979) (10,1091) (11,1614)
+			(12,1513) (13,1141) (14,954) (15,1379) (16,1328) (17,1183)
+			(18,1428) (19,1055) (20,1564) (21,1671)};
+	\end{axis}
+\end{tikzpicture}
+\caption{The average score over generations} \label{fig:train:avg}
+\end{subfigure}
+\qquad
+\begin{subfigure}[b]{0.44\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.8]
+	\begin{axis}[
+		axis line style={opacity=0},
+		major tick style={draw=none},
+		ymajorgrids,
+		xlabel=Generations,
+		ylabel=Best score,
+		ymin=0,
+		ymax=5000
+	]
+	\addplot[very thick, color=tufte1, mark=+]
+		coordinates {(1,1390) (2,2343) (3,1626) (4,1633) (5,1939)
+			(6,3635) (7,3734) (8,2826) (9,2248) (10,2155) (11,4213)
+			(12,3501) (13,2439) (14,3841) (15,3471) (16,3328) (17,2843)
+			(18,2704) (19,2516) (20,4865) (21,3187)};
+	\end{axis}
+\end{tikzpicture}
+\caption{The best score over generations} \label{fig:train:best}
+\end{subfigure}
+
+\caption{The scores over generations of training with a population size
+         of 10. Individual scores are averages over 5 games played by the
+         individual. The (\subref{fig:train:avg}) plot shows average score,
+         and (\subref{fig:train:best}) shows best scores.}
+\label{fig:train}
+\end{figure*}
+
+\subsection*{Heuristics}
+The majority of our heuristics are taken from other heuristics in the literature. They are described below, and our trained weights are shown
+in Table~\ref{tbl:heu}.
+
+\begin{table}
+\centering
+\begin{tabular}{ l l }
+\toprule
+Heuristic & Weight \\
+\midrule
+Number of holes & 10.978 \\
+Max height & 4.024 \\ 
+No. of rows cleared & -0.432 \\
+Col. heights & 0.002 \\ 
+Adj. col. height diff. & 1.680 \\ 
+Row transitions & 0.011 \\ 
+Col. transitions & 0.925 \\ 
+Total well depth & 5.396 \\  
+\bottomrule
+\end{tabular}
+\caption{The trained weights.}
+\label{tbl:heu}
+\end{table}
+
+\begin{description}[leftmargin=0.5cm]
+	\item[Number of holes.]
+	A hole is defined to be an empty square with a filled
+	squared higher in the same column.\footnotemark[1]
+    
+    \item[Maximum height.]
+	The height of the highest column.\footnotemark[1]
+    
+    \item[Rows cleared.]
+	The cumulative number of rows that would be cleared by a move.\footnotemark[2]
+    
+    \item[Column heights.]
+	A single weight applied to the height of each column. 
+    Note that, unlike Bertsekas and Ioffe's individual column 
+    height weights, we only use a single weight for all
+    of the columns.\footnotemark[1]
+    
+    \item[Adjacent column height differences.]
+	A single weight applied to the difference in height
+	between any two adjacent columns. Again, we only use
+    a single weight instead of individual weights for each pair
+    of adjacent columns.\footnotemark[1]
+    
+    \item[Row transitions.]
+	Within a row, a ``transition'' is defined as a change
+	from a filled square to an empty square or vice-versa.\footnotemark[2]
+    
+    \item[Column transitions.]
+	The same as above, except within columns.\footnotemark[2]
+    
+    \item[Total depth of all wells.]
+	A well is a sequence of empty cells above the top
+	piece in a column such that the empty cells are
+ 	surrounded (left and right) by occupied cells or a
+	boundary of the board. The depth of the well is the
+    length of this sequence.\footnotemark[2]
+    
+\end{description}
+
+\section*{Training}
+Our training method is a genetic algorithm where each individual is a set of weights. During each generation of the algorithm, 10 games is played with each of the weights for training purposes; however, the training games are on boards with height 10 instead of 20 to end games faster and therefore expedite the training process. The average score of the training games is taken as the child's fitness value when procreation is applied. Selection is straightforward: each parent is chosen proportionally to its weight, and a crossover point is selected uniformly at random from 1 to n, where n is the number of weights. All weights before the crossover point are taken from the first parent and all weights after the point are taken from the second. 
+
+Mutation is also simple. Each weight is multiplied by a value chosen from a normal distribution with $\mu = 1$ and $\sigma = 0.3$. Furthermore, each weight of an individual is multiplied by the same scaling value, chosen from a normal distribution with $\mu = 1$ and $\sigma = 0.15$. This does not change the performance of the individual, but creates more variation for the procreation in the next generation. Formerly, we did not use a normal distribution to obtain the mutated value. Instead, each weight had a 20\% chance to be mutated. If a weight was selected for mutation, the new value would be chosen at random from a large range. While simpler, this approach unfortunately led to too much variance in fitness from generation to generation, and we ultimately decided to remove it.
+
+Our algorithm currently iterates for 25 generations using 10 individuals per generation, but this is easily scalable based on the available hardware.
+
+Figure~\ref{fig:train} shows the result of a single training session. Both the average score and best score trend upwards as each generation completes. This indicates that our training is actually working. It is interesting to note the large variation in best scores across generations. The average scores do not seem to vary nearly as much.
+
+
+
+\subsection*{Big Data}
+
+Because of the highly parallelizable nature of our learning method, it is naturally able to handle a large sequence of pieces. Each training game can be assigned to a separate processor, and within each training game, each move lookahead can be parallelized to a separate processor. Our current algorithm only performs a 1-ply lookahead, but with additional cores, we can easily look several turns in advance.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}[scale=0.8]
+	\begin{axis}[
+		axis line style={opacity=0},
+		major tick style={draw=none},
+		ymajorgrids,
+		xlabel=Threads,
+		ylabel={Sec / generation},
+	]
+	\addplot[very thick, color=tufte1, mark=+]
+		coordinates {(1,25.315001) (2,17.682667) (3,8.254666)
+			(4,6.417000) (5,4.893667)
+			(6,9.175000) (7,3.481667) (8,3.648333) (9,4.043667)
+			(10,3.593667) (11,5.045000) (12,3.251333) (13,2.544333)
+			(14,7.733667) (15,2.753667) (16,2.604000) (17,2.866000)
+			(18,2.629333) (19,2.052333) (20,3.752667) (21,2.963000)
+			(22,4.712000) (23,3.106667) (24,3.324000) (25,4.328000)
+			(26,3.732000) (27,4.737667) (28,3.133333) (29,3.924333)
+			(30,3.108667) (31,3.017667) (32,3.342667) (33,2.637666)
+			(34,4.832000) (35,3.657000) (36,3.688667)};
+	\end{axis}
+\end{tikzpicture}
+\caption{Performance improvement from using multiple cores. We plot
+         the seconds per generation for different number of threads.
+         The machine has 36 cores.} \label{fig:traincores}
+\end{figure}
+
+
+\subsection*{Performance}
+Our genetic algorithm training code is parallelized and automatically leverages the available number of cores on the host machine. The parallelization is done during the computation of fitness for individuals in a generation. Each game that needs to be run is submitted to a thread pool (we are using the Executor class that ships with Java). The size of the thread pool is set to the number of cores available on the system.
+
+We are also parallelizing the method that determines the next move during game play. The parallelization occurs when we perform depth-first lookahead on the current piece under evaluation. Similar to the parallelization of the fitness computation discussed above, we submit tasks to calculate the heuristic of  possible futures move to a thread pool.
+
+We ran the code on Amazon EC2 using a c4.8xlarge instance with 36 cores and 60gb of RAM. Doing so allowed us to increase the number of individuals in a generation and the number of games that each individual plays. We noticed a substantial increase in speed compared to 1 processor as shown in
+Figure~\ref{fig:traincores}. The speedup quickly levels off, but it seems to be
+caused by practical problems with dispatching threads, as we observed some
+idle cores. This would have to be further investigated.
+
+Further parallelization is possible using a distributed system: we can distribute computation across multiple computers. However, performance gains would likely be marginal due to the communication overhead that comes with a distributed system. Another possible improvement would be to use a fork join pool instead of a thread pool as this allows threads to perform work stealing. Work stealing allows threads to "steal" sub-tasks from other threads which, in theory, should lead to faster performance.
 
 \section*{Experiments}
 
-\section*{Discussion}
+After we realized significant performance gains from parallelizing our program, we experimented with increasing the number of children per generation from 10 to 100 while maintaining the same number of generations. After 10 training/testing runs for each generation size, we found no noticeable difference between the performances of the resulting weight vectors from the two generation sizes.
+
+
+
+
+
+
+\section*{Other Approaches}
+
+We tried several other approaches for the training of weights in addition to the genetic algorithm above. 
+
+Our first attempt was an optimization to the differences-based policy iteration provided in the Bertsekas and Ioffe paper. In our approach, we computed the gradient at each local point, which we then used to inform the direction of travel. Unfortunately, we were unable to get the formula to train properly: even when initialized with theoretically "good" weights, our training algorithm would fail to retain them and would rarely score more than a few lines.
+
+We also tried a particle swarm optimization approach. In this method, we randomly initialized a large number of weight points and assigned a random intertia vector to each. We simulated a game with the weights from each weight point, and we tracked the best result for each weight point as well as the global best result. We used the sum of the local intertia, the local best result, and the global best result to compute a velocity vector, which we then applied to the particle to determine a new position for the next iteration. We varied the number of weight points and the number of iterations. With a large number of weight points, the number of iterations needed for convergence was usually much smaller because the global best was found much more quickly. We seemed to get the best results with 4000 particles and only 10 iterations, but we rarely scored more than 20 or 30 lines using this method.
+
+\section*{Results}
+
+Our current high score is 7,720,000 rows cleared. This particular game instance was still running when we were forced to terminate it. Our highest naturally terminated game instance cleared 5,201,256 rows. Figure~\ref{fig:res} show the
+scores of 32 runs of our tetris player.
+
+\begin{figure}
+\centering
+\pgfplotsset{
+	tufte ybar/.style={
+		ybar,
+		%hide x axis,
+		axis line style={opacity=0},
+		major tick style={draw=none},
+		bar width=0.5em,
+		ymajorgrids,
+		major grid style=white,
+		axis on top,
+	}
+}
+\begin{tikzpicture}[scale=0.8]
+\begin{axis}[
+	ylabel=Score,
+	xlabel=Games,
+	xtick=\empty,
+	tufte ybar
+]
+
+\addplot[fill=tufte1, draw=none]
+coordinates {
+(1,0.978055)
+(2,0.729024)
+(3,1.153408)
+(4,0.527820)
+(5,0.396865)
+(6,0.738631)
+(7,0.583110)
+(8,2.706293)
+(9,0.153770)
+(10,2.450681)
+(11,1.283317)
+(12,3.199187)
+(13,5.201256)
+(14,2.947520)
+(15,3.909269)
+(16,4.137318)
+(17,2.519587)
+(18,1.161072)
+(19,0.170665)
+(20,5.489972)
+(21,4.310814)
+(22,2.549213)
+(23,2.114065)
+(24,4.209693)
+(25,1.996083)};
+\addplot[fill=gray, draw=none]
+coordinates {
+(26,7.030000)
+(27,4.170000)
+(28,4.110000)
+(29,7.480000)
+(30,7.410000)
+(31,6.800000)
+(32,7.720000)};
+\addplot[red,sharp plot,update limits=false] 
+	coordinates {(0,3.1980215) (33,3.1980215)};
+\end{axis}
+\end{tikzpicture}
+\caption{The scores of 32 games (7 still running at the time of submission,
+         marked in gray.), in millions. The red line shows the average at 3.198
+         millions.}
+\label{fig:res}
+\end{figure}
+
+\footnotetext[1]{D. Bertsekas and  S. Ioffe, \textit{Temporal Differences-Based Policy Iteration and Applications in Neuro-Dynamic Programming}. Cambridge, MA: MIT Press, August 1996.}
+
+\footnotetext[2]{V. Romero et al., \textit{Tetris Agent Optimization Using Harmony Search Algorithm}. Indonesia: IJCSI Internationla Journal of Computer Science Issues, Vol. 8, Issue 1, January 2011}
 
 \end{document}
+
+
