@@ -15,11 +15,11 @@ class Moves extends State {
 class Weights {
 	public double numHoles;
 	public double maxHeight;
+	public double rowsCleared;
 	public double colHeights;
 	public double adjColHeightDiffs;
 	public double rowTrans;
 	public double colTrans;
-  public double maxWellDepth;
   public double totalWells;
 
 	public Weights() {}
@@ -30,11 +30,11 @@ class Weights {
 
 		arr[wi++] = numHoles;
 		arr[wi++] = maxHeight;
+		arr[wi++] = rowsCleared;
 		arr[wi++] = colHeights;
 		arr[wi++] = adjColHeightDiffs;
 		arr[wi++] = rowTrans;
 		arr[wi++] = colTrans;
-		arr[wi++] = maxWellDepth;
 		arr[wi++] = totalWells;
 		return arr;
 	}
@@ -45,47 +45,26 @@ class Weights {
 
 		w.numHoles = arr[wi++];
 		w.maxHeight = arr[wi++];
+		w.rowsCleared = arr[wi++];
 		w.colHeights = arr[wi++];
 		w.adjColHeightDiffs = arr[wi++];
 		w.rowTrans = arr[wi++];
 		w.colTrans = arr[wi++];
-		w.maxWellDepth = arr[wi++];
 		w.totalWells = arr[wi++];
 		return w;
 	}
 
-	public static Weights jacobWeights() {
-		Weights w = new Weights();
-		w.numHoles = 5;
-		w.maxHeight = 1.5;
-		w.colHeights = 0.5;
-		w.adjColHeightDiffs = 1.5;
-		w.maxWellDepth = 1.5;
-		w.totalWells = 2;
-		return w;
-	}
-
-	public static Weights martinWeights() {
-		Weights w = new Weights(); // [233][-44][232][64][68]
-		w.numHoles = 233;
-		w.maxHeight = -44;
-		w.colHeights = 64;
-		w.adjColHeightDiffs = 68;
-		w.maxWellDepth = 72;
-		w.totalWells = 75;
-		return w;
-	}
 
 	public static Weights someWeights() {
-		Weights w = new Weights(); // [239][-2][116][39][53]
-		w.numHoles = 2.749176;
-		w.maxHeight = 1.855434;
-		w.colHeights = 0.033812;
-		w.adjColHeightDiffs = -0.088960;
-		w.rowTrans = 0.775986;
-		w.colTrans = 1.488836;
-		w.maxWellDepth = 0.087406;
-		w.totalWells = 2.285945;
+		Weights w = new Weights(); // [10.978][4.024][-0.432][0.002][1.680][0.011][0.925][5.396]
+		w.numHoles = 10.978;
+		w.maxHeight = 4.024;
+		w.rowsCleared = -0.432;
+		w.colHeights = 0.002;
+		w.adjColHeightDiffs = 1.680;
+		w.rowTrans = 0.011;
+		w.colTrans = 0.925;
+		w.totalWells = 5.396;
 		return w;
 	}
 
@@ -93,18 +72,17 @@ class Weights {
 		Weights w = new Weights();
 		w.numHoles = getRandom();
 		w.maxHeight = getRandom();
+		w.rowsCleared = getRandom();
 		w.colHeights = getRandom();
 		w.adjColHeightDiffs = getRandom();
 		w.rowTrans = getRandom();
 		w.colTrans = getRandom();
-    w.maxWellDepth = getRandom();
     w.totalWells = getRandom();
 		return w;
 	}
 
 	public static double getRandom() {
 		java.util.Random r = new java.util.Random();
-		// return r.nextInt(501)-250;
 		return r.nextDouble() * 10 - 5;
 	}
 }
@@ -123,7 +101,6 @@ class Simulator
 	public int[] top = new int[State.COLS];
 	public int turn, maxHeight, rowsCleared, rows, cols;
 	public Weights weights;
-	public int rowsClearedPerMove = 0;
 
 	// For quick heuristics, simMove keeps this field updated for:
 	// - Max height
@@ -131,8 +108,6 @@ class Simulator
 	// - Holes
 	// - Cleared
 	public double heuristic;
-	public double maxWellDepth;
-	public double totalWells;
 
 	public Simulator(Simulator sim) {
 		this(sim.rows, sim.cols, sim.weights);
@@ -221,12 +196,10 @@ class Simulator
 		sum += rowTransitions * weights.rowTrans;
 		sum += wells * weights.totalWells;
 
-
 		return sum;
 	}
 
 	public boolean simMove(int move, int piece) {
-		rowsClearedPerMove = 0;
 		int orient = legalMoves[piece][move][State.ORIENT];
 		int slot = legalMoves[piece][move][State.SLOT];
 		turn++;
@@ -244,16 +217,6 @@ class Simulator
 		placePiece(piece, orient, slot, height);
 		clearRows(piece, orient, height);
 		return true;
-	}
-
-	private int getTotalWells() {
-		int total = 0;
-		// wells in the inner column
-		for(int col = 0; col < this.cols - 1; ++col) {
-				total += (maxHeight - top[col]);
-		}
-		// System.out.println("Total Wells : "+ total);
-		return total;
 	}
 
 	private void placePiece(int piece, int orient, int slot, int height) {
@@ -277,33 +240,7 @@ class Simulator
 			while (--colBottom > 0 && field[colBottom][col + slot] == 0)
 				heuristic += weights.numHoles;
 		}
-
-		heuristic += weights.maxWellDepth * computeMaxWellDepth();
-		// heuristic += weights.totalWells * getTotalWells();
-
 	}
-
-	private int computeMaxWellDepth() {
-		int maxWellDepth = 0;
-		for(int col = 0; col < this.cols - 1; col++) {
-		  // Adjust max well depth heuristic
-		  if(top[col] == 0) {
-		    int depth;
-		    if(col > 0 && col < this.cols - 1) {
-		      depth = Math.max(top[col + 1], top[col - 1]);
-		      if(depth > maxWellDepth) {
-		        maxWellDepth = depth;
-		      } else if(col == 0) {
-		        maxWellDepth = Math.max(maxWellDepth, top[col + 1]);
-		      } else {
-		        maxWellDepth = Math.max(maxWellDepth, top[col - 1]);
-		      }
-		    }
-		  }
-    }
-    // System.out.println("Max Welldepth :" + maxWellDepth);
-    return maxWellDepth;
-  }
 
 	private void clearRows(int piece, int orient, int height) {
 		// Check for full rows - starting at the top of the piece
@@ -327,7 +264,6 @@ class Simulator
 	private void removeRow(int row) {
 		int newMaxHeight = 0;
 		rowsCleared++;
-		rowsClearedPerMove++;
 
 		// For each column in row
 		for (int col = 0; col < this.cols; col++) {
@@ -351,10 +287,9 @@ class Simulator
 			}
 		}
 
+		heuristic += weights.rowsCleared;
 		heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
 		maxHeight = newMaxHeight;
-
-		heuristic += weights.maxWellDepth * computeMaxWellDepth();
 	}
 
 }
@@ -375,7 +310,7 @@ public class PlayerSkeleton {
 	}
 
 	private void forwardLookAvg(Simulator s, int maxdepth, double[] hues, int hIndex) {
-		int average = 0;
+		double average = 0;
 		Simulator sim = new Simulator(s);
 
 		// For all possible pieces
@@ -389,11 +324,10 @@ public class PlayerSkeleton {
 				if (!sim.simMove(move, piece))
 					continue;
 
-				double heu = -sim.rowsClearedPerMove;
 				//if (maxdepth != 1)
 				//	heu += forwardLookAvg(sim, maxdepth - 1);
 				//else
-				heu += sim.getHeuristic();
+				double heu = sim.getHeuristic();
 
 				if (heu < pieceBestHeu)
 					pieceBestHeu = heu;
@@ -414,7 +348,8 @@ public class PlayerSkeleton {
 
 		final double[] hues = new double[legalMoves.length];
 
-		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()); // for playing
+		// ExecutorService executor = Executors.newFixedThreadPool(1);  // for training
 		for (int move = 0; move < legalMoves.length; move++) {
 			sim.revertTo(gameSim);
 			if (!sim.simMove(move, piece)) {
@@ -423,7 +358,7 @@ public class PlayerSkeleton {
 
 			final Simulator sn = new Simulator(sim);
 			sn.revertTo(sim);
-			hues[move] = -sim.rowsClearedPerMove;
+			hues[move] = 0;
 			final int hMove = move;
 			Runnable aRunnable = new Runnable(){
 		            @Override
@@ -466,39 +401,38 @@ public class PlayerSkeleton {
 
 	public static void main(String[] args) {
 		State s = new State();
-		//TFrame tFrame = new TFrame(s);
+		// TFrame tFrame = new TFrame(s);
+
+		// Training
 		//Genetic gen = new Genetic(100, State.ROWS-10, State.COLS);
 		//Weights w = gen.train(25); // Number of generations
 
-		// Weights w = Weights.jacobWeights();
-		// Weights w = Weights.martinWeights();
+		// Playing
 		Weights w = Weights.someWeights();
 
-		for(int game = 0; game < 10; game++) {
+		s = new State();
+		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+		while(!s.hasLost()) {
+			int move = p.pickMove(s.legalMoves(), s.getNextPiece());
+			p.gameSim.simMove(move, s.getNextPiece());
+			s.makeMove(move);
+			// s.draw();
+			int x = s.getRowsCleared();
+			if(x % 10000 == 0 && x > 0)
+				System.out.println(x+" rows.");
+			// tFrame.setScoreLabel(s.getRowsCleared());
+			// s.drawNext(0,0);
 
-			s = new State();
-			PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
-			while(!s.hasLost()) {
-				int move = p.pickMove(s.legalMoves(), s.getNextPiece());
-				p.gameSim.simMove(move, s.getNextPiece());
-				s.makeMove(move);
-				// s.draw();
-				int x = s.getRowsCleared();
-				if(x % 100 == 0 && x > 0)
-                                        System.out.println(x+" rows.");
-				// s.drawNext(0,0);
-
-				// try {
-				// 	Thread.sleep(00);
-				// } catch (InterruptedException e) {
-				// 	e.printStackTrace();
-				// }
-			}
+			// try {
+			// 	Thread.sleep(00);
+			// } catch (InterruptedException e) {
+			// 	e.printStackTrace();
+			// }
+		}
 
 			//System.out.println("You have completed "+p.playAndReturnScore()+" rows.");
 
-		}
-
+		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
 		System.exit(0);
 	}
 }
