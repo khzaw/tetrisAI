@@ -138,39 +138,6 @@ class Genetic {
 		System.out.println();
 	}
 
-	private void selectAndProcreate() {
-		Individual[] children = new Individual[individuals.length];
-		Individual p1, p2;
-
-		List<Integer> firstRound = new ArrayList<Integer>();
-		List<Integer> secondRound = new ArrayList<Integer>();
-
-		for (int i = 0; i < individuals.length; i++)
-			firstRound.add(i);
-
-		Collections.shuffle(firstRound);
-		for (int i = 0; i < firstRound.size(); i+=2) {
-			if (individuals[firstRound.get(i)].fitness >
-			    individuals[firstRound.get(i+1)].fitness)	
-				secondRound.add(firstRound.get(i));
-			else
-				secondRound.add(firstRound.get(i+1));
-		}
-
-		Collections.shuffle(secondRound);
-
-		for (int i = 0; i < secondRound.size(); i+=2) {
-			p1 = individuals[secondRound.get(i)];
-			p2 = individuals[secondRound.get(i+1)];
-			children[i] = Individual.procreate(p1, p2);
-			children[i*2] = Individual.procreate(p1, p2);
-			children[i].mutate();
-			children[i*2].mutate();
-		}
-
-		individuals = children;
-	}
-
 	private Individual getBest() {
 		Individual best = individuals[0];
 		for (int i = 0; i < individuals.length; i++)
