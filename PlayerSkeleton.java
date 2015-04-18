@@ -12,7 +12,6 @@ class Moves extends State {
 class Weights {
 	public double numHoles;
 	public double maxHeight;
-	public double rowsCleared;
 	public double colHeights;
 	public double adjColHeightDiffs;
 	public double rowTrans;
@@ -23,12 +22,11 @@ class Weights {
 	public Weights() {}
 
 	public double[] toArray() {
-		double[] arr = new double[9];
+		double[] arr = new double[8];
 		int wi = 0;
 
 		arr[wi++] = numHoles;
 		arr[wi++] = maxHeight;
-		arr[wi++] = rowsCleared;
 		arr[wi++] = colHeights;
 		arr[wi++] = adjColHeightDiffs;
 		arr[wi++] = rowTrans;
@@ -44,7 +42,6 @@ class Weights {
 
 		w.numHoles = arr[wi++];
 		w.maxHeight = arr[wi++];
-		w.rowsCleared = arr[wi++];
 		w.colHeights = arr[wi++];
 		w.adjColHeightDiffs = arr[wi++];
 		w.rowTrans = arr[wi++];
@@ -58,7 +55,6 @@ class Weights {
 		Weights w = new Weights();
 		w.numHoles = 5;
 		w.maxHeight = 1.5;
-		w.rowsCleared = -2;
 		w.colHeights = 0.5;
 		w.adjColHeightDiffs = 1.5;
 		w.maxWellDepth = 1.5;
@@ -70,7 +66,6 @@ class Weights {
 		Weights w = new Weights(); // [233][-44][232][64][68]
 		w.numHoles = 233;
 		w.maxHeight = -44;
-		w.rowsCleared = 232;
 		w.colHeights = 64;
 		w.adjColHeightDiffs = 68;
 		w.maxWellDepth = 72;
@@ -82,7 +77,6 @@ class Weights {
 		Weights w = new Weights(); // [239][-2][116][39][53]
 		w.numHoles = 239;
 		w.maxHeight = -2;
-		w.rowsCleared = 116;
 		w.colHeights = 39;
 		w.adjColHeightDiffs = 53;
 		w.maxWellDepth = 56;
@@ -94,7 +88,6 @@ class Weights {
 		Weights w = new Weights();
 		w.numHoles = getRandom();
 		w.maxHeight = getRandom();
-		w.rowsCleared = getRandom();
 		w.colHeights = getRandom();
 		w.adjColHeightDiffs = getRandom();
 		w.rowTrans = getRandom();
@@ -353,15 +346,9 @@ class Simulator
 			}
 		}
 
-		// heuristic += weights.rowsCleared;
-		// heuristic -= weights.maxHeight;
-		// maxHeight--;
-		// heuristic += weights.rowsCleared;
 		heuristic -= weights.maxHeight * (maxHeight - newMaxHeight);
 		maxHeight = newMaxHeight;
 
-		// computeMaxWellDepth();
-		// totalWells();
 		heuristic += weights.maxWellDepth * computeMaxWellDepth();
 	}
 
