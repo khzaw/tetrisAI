@@ -1,7 +1,7 @@
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
 import java.util.*;
 
 class Individual {
@@ -242,7 +242,7 @@ class Weights {
 	}
 
 
-	public static Weights someWeights() {
+	public static Weights trainedWeights() {
 		Weights w = new Weights(); // [10.978][4.024][-0.432][0.002][1.680][0.011][0.925][5.396]
 		w.numHoles = 10.978;
 		w.maxHeight = 4.024;
@@ -485,6 +485,10 @@ class Simulator
 public class PlayerSkeleton {
 	private Simulator gameSim;
 
+	public PlayerSkeleton() {
+		gameSim = new Simulator(State.ROWS, State.COLS, Weights.trainedWeights());
+	}
+
 	public PlayerSkeleton(Weights w, int rows,int  cols) {
 		gameSim = new Simulator(rows,cols,w);
 	}
@@ -595,17 +599,12 @@ public class PlayerSkeleton {
 		//Weights w = gen.train(25); // Number of generations
 
 		// Playing
-		Weights w = Weights.someWeights();
-		PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
+		PlayerSkeleton p = new PlayerSkeleton();
 		while(!s.hasLost()) {
 			int move = p.pickMove(s.legalMoves(), s.getNextPiece());
 			p.gameSim.simMove(move, s.getNextPiece());
 			s.makeMove(move);
-			int x = s.getRowsCleared();
-			if(x % 10000 == 0 && x > 0)
-				System.out.println(x+" rows.");
 			s.draw();
-			// tFrame.setScoreLabel(s.getRowsCleared());
 			s.drawNext(0,0);
 
 			try {
