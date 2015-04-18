@@ -1,6 +1,6 @@
 class Individual {
 	public int fitness, cols;
-	public int[] chromosomes;
+	public double[] chromosomes;
 	private static int MUCHANCE = 20;
 	java.util.Random r;
 
@@ -28,8 +28,8 @@ class Individual {
 		double flipChance = 0.10;
 		// double scale = 1;
 		for (int i = 0; i < chromosomes.length; i++) {
-			int chr = chromosomes[i];
-			int mutated = (int) ((double) Math.round(chr * (stdDev*r.nextGaussian()+1.0) * scale) );
+			double chr = chromosomes[i];
+			double mutated = chr * (stdDev*r.nextGaussian()+1.0) * scale;
 			// if(r.nextDouble() < flipChance) {
 			// 	mutated = -mutated;
 			// }
@@ -40,7 +40,7 @@ class Individual {
 	public void print(int num) {
 		System.out.format("%d Fitness: %d - Chromosomes: ", num, fitness);
 		for (int i = 0; i < chromosomes.length; i++)
-			System.out.format("[%d]", chromosomes[i]);
+			System.out.format("[%f]", chromosomes[i]);
 		System.out.format("\n");
 	}
 }

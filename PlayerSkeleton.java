@@ -9,19 +9,19 @@ class Moves extends State {
 }
 
 class Weights {
-	public int numHoles;
-	public int maxHeight;
-	public int rowsCleared;
-	public int colHeights;
-	public int adjColHeightDiffs;
-	public int rowTrans;
-	public int colTrans;
-	public int wellSums;
+	public double numHoles;
+	public double maxHeight;
+	public double rowsCleared;
+	public double colHeights;
+	public double adjColHeightDiffs;
+	public double rowTrans;
+	public double colTrans;
+	public double wellSums;
 
 	public Weights() {}
 
-	public int[] toArray() {
-		int[] arr = new int[8];
+	public double[] toArray() {
+		double[] arr = new double[8];
 		int wi = 0;
 
 		arr[wi++] = numHoles;
@@ -35,7 +35,7 @@ class Weights {
 		return arr;
 	}
 
-	public static Weights fromArray(int[] arr) {
+	public static Weights fromArray(double[] arr) {
 		Weights w = new Weights();
 		int wi = 0;
 
@@ -96,14 +96,14 @@ class Weights {
 
 	public static Weights fiftyKWeights() {
 		Weights w = new Weights(); // [10978][4024][-432][2][1680][11][925][5396]
-		w.numHoles = 10978/10;
-		w.maxHeight = 4024/10;
-		w.rowsCleared = -432/10;
-		w.colHeights = 2/10;
-		w.adjColHeightDiffs = 1680/10;
-		w.rowTrans = 11/10;
-		w.colTrans = 925/10;
-		w.wellSums = 5396/10;
+		w.numHoles = 10.978;
+		w.maxHeight = 4.024;
+		w.rowsCleared = -0.432;
+		w.colHeights = 0.002;
+		w.adjColHeightDiffs = 1.680;
+		w.rowTrans = 0.011;
+		w.colTrans = 0.925;
+		w.wellSums = 5.396;
 		return w;
 	}
 
@@ -120,7 +120,7 @@ class Weights {
 		return w;
 	}
 
-	public static int getRandom() {
+	public static double getRandom() {
 		java.util.Random r = new java.util.Random();
 		return r.nextInt(5001)-2500;
 	}
@@ -146,7 +146,7 @@ class Simulator
 	// - Column Heights
 	// - Holes
 	// - Cleared
-	public int heuristic;
+	public double heuristic;
 
 	public Simulator(Simulator sim) {
 		this(sim.rows, sim.cols, sim.weights);
@@ -171,8 +171,8 @@ class Simulator
 		maxHeight = sim.maxHeight;
 	}
 
-	public int getHeuristic() {
-		int sum = heuristic;
+	public double getHeuristic() {
+		double sum = heuristic;
 
 		for(int i = 0; i < top.length - 1; i++)
 			sum += Math.abs(top[i] - top[i+1]) * weights.adjColHeightDiffs;
@@ -347,14 +347,14 @@ public class PlayerSkeleton {
 		return gameSim.rowsCleared;
 	}
 
-	private int forwardLookAvg(Simulator s, int maxdepth) {
-		int average = 0;
+	private double forwardLookAvg(Simulator s, int maxdepth) {
+		double average = 0;
 		Simulator sim = new Simulator(s);
 
 		// For all possible pieces
 		for (int piece = 0; piece < State.N_PIECES; piece++) {
 			int numMoves = Moves.getNumMoves(piece);
-			int pieceBestHeu = Integer.MAX_VALUE;
+			double pieceBestHeu = Double.MAX_VALUE;
 
 			// Try all possible moves for piece
 			for (int move = 0; move < numMoves; move++) {
@@ -362,7 +362,7 @@ public class PlayerSkeleton {
 				if (!sim.simMove(move, piece))
 					continue;
 
-				int heu;
+				double heu;
 				if (maxdepth != 1)
 					heu = forwardLookAvg(sim, maxdepth - 1);
 				else
