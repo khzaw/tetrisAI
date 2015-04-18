@@ -1,4 +1,7 @@
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 class Moves extends State {
 	public static int[][][] allMoves = legalMoves;
 	public static int getNumMoves(int piece) {
@@ -80,13 +83,15 @@ class Weights {
 
 	public static Weights someWeights() {
 		Weights w = new Weights(); // [239][-2][116][39][53]
-		w.numHoles = 239;
-		w.maxHeight = -2;
-		w.rowsCleared = 116;
-		w.colHeights = 39;
-		w.adjColHeightDiffs = 53;
-		w.maxWellDepth = 56;
-		w.totalWells = 50;
+		w.numHoles = 2.749176;
+		w.maxHeight = 1.855434;
+		w.rowsCleared = -0.047475;
+		w.colHeights = 0.033812;
+		w.adjColHeightDiffs = -0.088960;
+		w.rowTrans = 0.775986;
+		w.colTrans = 1.488836;
+		w.maxWellDepth = 0.087406;
+		w.totalWells = 2.285945;
 		return w;
 	}
 
@@ -382,7 +387,7 @@ public class PlayerSkeleton {
 		return gameSim.rowsCleared;
 	}
 
-	private int forwardLookAvg(Simulator s, int maxdepth) {
+	private void forwardLookAvg(Simulator s, int maxdepth, double[] hues, int hIndex) {
 		int average = 0;
 		Simulator sim = new Simulator(s);
 
@@ -398,10 +403,10 @@ public class PlayerSkeleton {
 					continue;
 
 				double heu = -sim.rowsClearedPerMove;
-				if (maxdepth != 1)
-					heu += forwardLookAvg(sim, maxdepth - 1);
-				else
-					heu += sim.getHeuristic();
+				//if (maxdepth != 1)
+				//	heu += forwardLookAvg(sim, maxdepth - 1);
+				//else
+				heu += sim.getHeuristic();
 
 				if (heu < pieceBestHeu)
 					pieceBestHeu = heu;
@@ -411,7 +416,7 @@ public class PlayerSkeleton {
 		}
 
 		average /= State.N_PIECES;
-		return average;
+		hues[hIndex] = average;
 	}
 
 	// implement this function to have a working system
@@ -420,19 +425,45 @@ public class PlayerSkeleton {
 		int bestMove = 0;
 		double bestHeuristic = Double.POSITIVE_INFINITY;
 
+		final double[] hues = new double[legalMoves.length];
+
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		for (int move = 0; move < legalMoves.length; move++) {
 			sim.revertTo(gameSim);
 			if (!sim.simMove(move, piece)) {
 				continue;
 			}
 
-			double heu = forwardLookAvg(sim, 1) - sim.rowsClearedPerMove;
+			final Simulator sn = new Simulator(sim);
+			sn.revertTo(sim);
+			hues[move] = -sim.rowsClearedPerMove;
+			final int hMove = move;
+			Runnable aRunnable = new Runnable(){
+		            @Override
+		            public void run() {
+						forwardLookAvg(sn, 1, hues, hMove);
+					}
+			};
+			executor.execute(aRunnable);
+			
 			// double heu = sim.getHeuristic();
-			if (heu < bestHeuristic) {
-				bestMove = move;
-				bestHeuristic = heu;
-			}
+			// if (heu < bestHeuristic) {
+			// 	bestMove = move;
+			// 	bestHeuristic = heu;
+			// }
 		}
+		executor.shutdown();
+		try {
+        	while (!executor.awaitTermination(50L, TimeUnit.DAYS)) {}
+        } catch (InterruptedException e) {
+
+        }		
+        for (int move = 0; move < legalMoves.length; move++) {
+        	if(hues[move] < bestHeuristic) {
+        		bestHeuristic = hues[move];
+        		bestMove = move;
+        	}
+        }
 
 		return bestMove;
 	}
@@ -447,35 +478,37 @@ public class PlayerSkeleton {
 	}
 
 	public static void main(String[] args) {
-		//TFrame tFrame = new TFrame(s);
 		State s = new State();
-		Genetic gen = new Genetic(100, State.ROWS-10, State.COLS);
-		Weights w = gen.train(25); // Number of generations
+		//TFrame tFrame = new TFrame(s);
+		//Genetic gen = new Genetic(100, State.ROWS-10, State.COLS);
+		//Weights w = gen.train(25); // Number of generations
 
 		// Weights w = Weights.jacobWeights();
 		// Weights w = Weights.martinWeights();
-		//Weights w = Weights.someWeights();
+		Weights w = Weights.someWeights();
 
 		for(int game = 0; game < 10; game++) {
 
 			s = new State();
 			PlayerSkeleton p = new PlayerSkeleton(w, State.ROWS, State.COLS);
-			// while(!s.hasLost()) {
-			// 	int move = p.pickMove(s.legalMoves(), s.getNextPiece());
-			// 	p.gameSim.simMove(move, s.getNextPiece());
-			// 	s.makeMove(move);
-			// 	// s.draw();
-			// 	//tFrame.setScoreLabel(s.getRowsCleared());
-			// 	// s.drawNext(0,0);
+			while(!s.hasLost()) {
+				int move = p.pickMove(s.legalMoves(), s.getNextPiece());
+				p.gameSim.simMove(move, s.getNextPiece());
+				s.makeMove(move);
+				// s.draw();
+				int x = s.getRowsCleared();
+				if(x % 100 == 0 && x > 0)
+                                        System.out.println(x+" rows.");
+				// s.drawNext(0,0);
 
-			// 	// try {
-			// 	// 	Thread.sleep(00);
-			// 	// } catch (InterruptedException e) {
-			// 	// 	e.printStackTrace();
-			// 	// }
-			// }
+				// try {
+				// 	Thread.sleep(00);
+				// } catch (InterruptedException e) {
+				// 	e.printStackTrace();
+				// }
+			}
 
-			System.out.println("You have completed "+p.playAndReturnScore()+" rows.");
+			//System.out.println("You have completed "+p.playAndReturnScore()+" rows.");
 
 		}
 
